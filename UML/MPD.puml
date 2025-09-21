@@ -1,0 +1,157 @@
+@startuml DoctoLight
+!theme plain
+
+entity "User" as user {
+  | Type       | Nom        | PK/FK | Null |
+  | BIGINT     | id         | PK    | NOT NULL |
+  | VARCHAR(100) | name     |       | NOT NULL |
+  | VARCHAR(255) | adress   |       | NOT NULL |
+  | VARCHAR(100) | phone    |       | NULL     |
+  | VARCHAR(150) | email    |       | NOT NULL |
+  | VARCHAR(255) | password |       | NOT NULL |
+  | BOOLEAN    | isActive   |       | NOT NULL |
+}
+
+entity "Role" as role {
+  | Type       | Nom    | PK/FK | Null |
+  | BIGINT     | id     | PK    | NOT NULL |
+  | VARCHAR(50)| nom    |       | NOT NULL |
+}
+
+entity "UserRole" as userrole {
+  | Type   | Nom      | PK/FK | Null |
+  | BIGINT | user_id  | PK/FK    | NOT NULL |
+  | BIGINT | role_id  | PK/FK    | NOT NULL |
+}
+
+entity "Service" as service {
+  | Type        | Nom        | PK/FK | Null |
+  | BIGINT      | id         | PK    | NOT NULL |
+  | VARCHAR(100)| name       |       | NOT NULL |
+  | TEXT        | description|       | NULL |
+  | DECIMAL(10,2)| price     |       | NOT NULL |
+  | BOOLEAN     | isActive   |       | NOT NULL |
+}
+
+entity "DisponibiliteStaff" as dispostaff {
+  | Type     | Nom           | PK/FK | Null |
+  | BIGINT   | id            | PK    | NOT NULL |
+  | BIGINT   | staff_id      | FK    | NOT NULL |
+  | DATETIME | start_datetime|       | NOT NULL |
+  | DATETIME | end_datetime  |       | NOT NULL |
+  | BOOLEAN  | isAvailable   |       | NOT NULL |
+}
+
+entity "DisponibiliteService" as disposervice {
+  | Type     | Nom           | PK/FK | Null |
+  | BIGINT   | id            | PK    | NOT NULL |
+  | BIGINT   | service_id    | FK    | NOT NULL |
+  | DATETIME | start_datetime|       | NOT NULL |
+  | DATETIME | end_datetime  |       | NOT NULL |
+  | BOOLEAN  | isAvailable   |       | NOT NULL |
+}
+
+entity "RDV" as rdv {
+  | Type     | Nom          | PK/FK | Null |
+  | BIGINT   | id           | PK    | NOT NULL |
+  | BIGINT   | patient_id   | FK    | NOT NULL |
+  | BIGINT   | staff_id     | FK    | NOT NULL |
+  | BIGINT   | service_id   | FK    | NOT NULL |
+  | DATETIME | start_datetime|      | NOT NULL |
+  | DATETIME | end_datetime |       | NULL |
+  | VARCHAR(20)| ENUM('Programmé','Annulé','Terminé')     |       | NOT NULL |
+}
+
+entity "News" as news {
+  | Type        | Nom     | PK/FK | Null |
+  | BIGINT      | id      | PK    | NOT NULL |
+  | VARCHAR(150)| title   |       | NOT NULL |
+  | TEXT        | content |       | NOT NULL |
+  | BOOLEAN     | isActive|       | NOT NULL |
+}
+
+entity "AuditLog" as auditlog {
+  | Type     | Nom        | PK/FK | Null |
+  | BIGINT   | id         | PK    | NOT NULL |
+  | VARCHAR(50) | entity  |       | NOT NULL |
+  | BIGINT   | entity_id  |       | NOT NULL |
+  | BIGINT   | user_id    | FK    | NOT NULL |
+  | VARCHAR(20) | action  |       | NOT NULL |
+  | TEXT     | description|       | NULL |
+  | VARCHAR(45) | ip_address |    | NULL |
+  | DATETIME | created_at |       | NOT NULL |
+}
+
+' =====================
+' Relations + actions
+' =====================
+user ||--o{ rdv : staff / patient
+note on link
+  crée / modifie / annule / consulte
+end note
+
+user ||--o{ dispostaff
+note on link
+  définit / ajoute
+end note
+
+user ||--o{ userrole
+note on link
+  s’attribue / révoque rôle
+end note
+
+user ||--o{ news
+note on link
+  publie / gère
+end note
+
+user ||--o{ auditlog
+note on link
+  historise
+end note
+
+service ||--o{ rdv
+note on link
+  concerne
+end note
+
+service ||--o{ disposervice
+note on link
+  définit créneaux
+end note
+
+service ||--o{ auditlog
+note on link
+  historise
+end note
+
+news ||--o{ auditlog
+note on link
+  historise
+end note
+
+auditlog ||--|| user
+note on link
+  action faite par
+end note
+
+role ||--o{ userrole
+note on link
+  attribue
+end note
+
+rdv ||--o{ auditlog
+note on link
+  historise
+end note
+
+dispostaff ||--o{ auditlog
+note on link
+  historise
+end note
+
+disposervice ||--o{ auditlog
+note on link
+  historise
+end note
+@enduml

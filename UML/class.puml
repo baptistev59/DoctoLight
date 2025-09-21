@@ -1,0 +1,171 @@
+@startuml DoctoLight
+!theme plain
+
+' ===========================
+' Classes principales
+' ===========================
+' ===========================
+' Utilisateurs
+' ===========================
+class User {
+  -id : int
+  -name : string
+  -email : string
+  -adress : string
+  -phone : string
+  -password : string
+  -isActive : boolean
+
+  +createUser()
+  +updateUser()
+  +deactivateUser()
+  +authenticate(password) : boolean
+}
+
+class Role {
+  -id : int
+  -nom : RoleName
+
+  +createRole()
+  +updateRole()
+  +deleteRole()
+}
+
+enum RoleName {
+  ADMIN
+  MEDECIN
+  SECRETAIRE
+  PATIENT
+}
+
+class UserRole {
+  -user_id : int
+  -role_id : int
+
+  +assignRoleToUser()
+  +removeRoleFromUser()
+}
+' ===========================
+' Services
+' ===========================
+class Service {
+  -id : int
+  -name : string
+  -description : text
+  -price : decimal
+  -isActive : boolean
+
+  +createService()
+  +updateService()
+  +deleteService()
+  +toggleDispo()
+}
+' ===========================
+' Disponibilités
+' ===========================
+class DisponibiliteStaff {
+  -id : int
+  -staff_id : int
+  -start_datetime : datetime
+  -end_datetime : datetime
+  -isDispo : boolean
+
+  +createDisponibilite()
+  +updateDisponibilite()
+  +deleteDisponibilite()
+  +isDisponible(datetime) : boolean
+}
+
+class DisponibiliteService {
+  -id : int
+  -service_id : int
+  -start_datetime : datetime
+  -end_datetime : datetime
+  -isDispo : boolean
+
+  +createDisponibilite()
+  +updateDisponibilite()
+  +deleteDisponibilite()
+  +isDisponible(datetime) : boolean
+}
+' ===========================
+' Rendez-vous
+' ===========================
+class RDV {
+  -id : int
+  -patient_id : int
+  -staff_id : int
+  -service_id : int
+  -start_datetime : datetime
+  -end_datetime : datetime
+  -status : StatutRdv
+
+  +createRDV()
+  +updateRDV()
+  +cancelRDV()
+  +checkDisponibilites() : boolean
+}
+
+enum StatutRdv {
+  Programmé
+  Annulé
+  Terminé
+}
+' ===========================
+' Actualités
+' ===========================
+class News {
+  -id : int
+  -title : string
+  -content : text
+  -isActive : boolean
+
+  +createNews()
+  +updateNews()
+  +deleteNews()
+  +togglePublish()
+}
+
+' ===========================
+' Audit Log générique
+' ===========================
+class AuditLog {
+  -id : int
+  -entity : string
+  -entity_id : int
+  -user_id : int
+  -action : string <<CREATE, UPDATE, DELETE>>
+  -description : text
+  -ip_address : string
+  -created_at : datetime
+
+  +logAction(entity, entity_id, user_id, action, description, ip)
+  +getLogsByEntity(entity, entity_id)
+}
+
+' ===========================
+' Relations
+' ===========================
+User "1" --> "0..n" RDV : crée/prend
+User "1" --> "0..n" RDV : consulte/valide (staff)
+User "1" --> "0..n" DisponibiliteStaff : définit/ajoute
+User "1" --> "1..n" UserRole : s’attribue/revoque rôle
+User "1" --> "0..n" News : publie/gère
+User "1" --> "0..n" AuditLog : historise
+
+Service "1" --> "0..n" RDV : concerne
+Service "1" --> "1..n" DisponibiliteService :définit créneaux
+Service "1" --> "0..n" AuditLog : historise
+
+News "1" --> "0..n" AuditLog : historise
+
+Role "1" --> "0..n" UserRole :attribue
+Role -> RoleName
+
+RDV "1" --> "0..n" AuditLog : historise
+RDV -> StatutRdv
+
+DisponibiliteStaff "1" --> "0..n" AuditLog : historise
+DisponibiliteService "1" --> "0..n" AuditLog :historise
+
+@enduml
