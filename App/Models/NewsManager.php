@@ -17,8 +17,23 @@ class NewsManager
         $request->execute();
 
         $newsList = [];
-        while ($row = $request->fetch(PDO::FETCH_ASSOC)) {
-            $newsList[] = new News($row);
+        while ($news = $request->fetch(PDO::FETCH_ASSOC)) {
+            $newsList[] = new News($news);
+        }
+        return $newsList;
+    }
+
+    // Récupérer un certains nombre de news. Limite à 5 news si aucun paramètre n'est donné
+    public function getLatest($limit = 5)
+    {
+        $limit = (int)$limit; // cast obligatoire en entier pour la sécurité (injection SQL)
+        $sql = "SELECT * FROM news ORDER BY created_at DESC LIMIT $limit";
+        $request = $this->pdo->prepare($sql);
+        $request->execute();
+
+        $newsList = [];
+        while ($news = $request->fetch(PDO::FETCH_ASSOC)) {
+            $newsList[] = new News($news);
         }
         return $newsList;
     }

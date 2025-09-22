@@ -18,12 +18,23 @@ class NewsController
     // Afficher une seule news
     public function show()
     {
+        if (!isset($_GET['id'])) {
+            header('Location: index.php?page=news');
+            exit;
+        }
         $id = intval($_GET['id']);
         $news = $this->newsManager->getNewsById($id);
+
         if (!$news) {
-            die("News non trouvée !");
+            die("Actualité non trouvée !");
         }
         include __DIR__ . '/../Views/news/shows.php';
+    }
+
+    // Affiche les 5 dernères news
+    public function getLatestNews($limit = 5): array
+    {
+        return $this->newsManager->getLatest($limit);
     }
 
     // Formulaire création news
@@ -51,7 +62,7 @@ class NewsController
             if ($this->newsManager->createNews($news)) {
                 header("Location: index.php?page=news&success=created");
             } else {
-                die("Erreur lors de la création de la news.");
+                die("Erreur lors de la création de l'actualité.");
             }
         }
     }
@@ -61,7 +72,8 @@ class NewsController
     {
         $id = intval($_GET['id']);
         $news = $this->newsManager->getNewsById($id);
-        if (!$news) die("News non trouvée !");
+
+        if (!$news) die("Actualité non trouvée !");
         include __DIR__ . '/../Views/news/edit.php';
     }
 
@@ -69,19 +81,19 @@ class NewsController
     public function update()
     {
         $id = intval($_GET['id']);
-        $titre = trim($_GET['titre']);
-        $contenu = trim($_GET['contenu']);
+        $titre = trim($_POST['titre']);
+        $contenu = trim($_POST['contenu']);
 
         $news = $this->newsManager->getNewsById($id);
 
-        if (!$news) die("News non trouvée !");
-        $news->setTitre($_POST['titre']);
-        $news->setContenu($_POST['contenu']);
+        if (!$news) die("Acyualité non trouvée !");
+        $news->setTitre($titre);
+        $news->setContenu($contenu);
 
         if ($this->newsManager->updateNews($news)) {
             header("Location: index.php?page=news&success=updated");
         } else {
-            die("Erreur lors de la mise à jour de la news.");
+            die("Erreur lors de la mise à jour de l'actualité.");
         }
     }
 
@@ -92,7 +104,7 @@ class NewsController
         if ($this->newsManager->deleteNews($id)) {
             header("Location: index.php?page=news&success=deleted");
         } else {
-            die("Erreur lors de la suppression de la news.");
+            die("Erreur lors de la suppression de l'actualité.");
         }
     }
 }

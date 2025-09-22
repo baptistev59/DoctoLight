@@ -6,7 +6,7 @@ class News
     private string $titre;
     private string $contenu;
     private int $created_by;
-    private string $created_at;
+    private DateTime $created_at;
 
     public function __construct(array $data)
     {
@@ -17,7 +17,9 @@ class News
         $this->titre = $data['titre'];
         $this->contenu = $data['contenu'];
         $this->created_by = $data['created_by'] ?? 1; // Désactive l'id obligatoire
-        $this->created_at = $data['created_at'] ?? date('d-m-Y H:i:s');
+        $this->created_at = isset($data['created_at'])
+            ? new \DateTime($data['created_at'])
+            : new \DateTime();
     }
 
     // Getters
@@ -37,9 +39,9 @@ class News
     {
         return $this->created_by;
     }
-    public function getCreatedAt(): string
+    public function getCreatedAt(string $format = 'd-m-Y H:i:s'): string
     {
-        return $this->created_at;
+        return $this->created_at->format($format);
     }
 
     // Setters

@@ -1,6 +1,6 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<h2>Liste des News</h2>
+<h2>Liste des Actualités</h2>
 
 <?php if (!empty($newsList)): ?>
     <ul>
@@ -17,9 +17,10 @@
         <?php endforeach; ?>
     </ul>
 <?php else: ?>
-    <p>Aucune news disponible pour le moment.</p>
+    <p>Aucune actualité disponible pour le moment.</p>
 <?php endif; ?>
-
-<a href="index.php?page=create-news">Créer une news</a>
+<span>
+    <a href="index.php?page=create-news">Créer une actualité</a>
+</span>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>
