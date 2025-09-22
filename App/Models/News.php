@@ -10,11 +10,14 @@ class News
 
     public function __construct(array $data)
     {
-        $this->id = $data['id'];
+        // Si id n’est pas fourni, on ne l’assigne pas
+        if (isset($data['id'])) {
+            $this->id = (int)$data['id'];
+        };
         $this->titre = $data['titre'];
         $this->contenu = $data['contenu'];
-        $this->created_by = $data['created_by'];
-        $this->created_at = $data['created_at'] ?? date('Y-m-d H:i:s');
+        $this->created_by = $data['created_by'] ?? 1; // Désactive l'id obligatoire
+        $this->created_at = $data['created_at'] ?? date('d-m-Y H:i:s');
     }
 
     // Getters

@@ -23,8 +23,8 @@ INSERT IGNORE INTO users (nom, prenom, email, password, date_naissance, is_activ
 ('Durand','Claire','claire.durand@cabinet.com','hash_sec1','1990-05-10',TRUE),
 ('Martin','Lucie','lucie.martin@cabinet.com','hash_sec2','1992-09-15',TRUE),
 -- Dentistes
-('Durand','Paul','paul.durand@cabinet.com','hash_doc1','1975-03-20',TRUE),
-('Moreau','Hélène','helene.moreau@cabinet.com','hash_doc2','1979-03-18',TRUE),
+('Dupont','Paul','paul.durand@cabinet.com','hash_doc1','1975-03-20',TRUE),
+('Durant','Hélène','helene.moreau@cabinet.com','hash_doc2','1979-03-18',TRUE),
 -- Patients
 ('Leroy','Jean','jean.leroy@example.com','hash_pat1','1985-06-12',TRUE),
 ('Dupont','Sophie','sophie.dupont@example.com','hash_pat2','1992-07-21',TRUE),
@@ -103,7 +103,7 @@ INSERT IGNORE INTO rdv (patient_id, staff_id, service_id, dispo_staff_id, dispo_
 -- ========================
 INSERT IGNORE INTO news (titre, contenu, created_by) VALUES
 ('Nouvelles horaires pour consultations','Nous avons étendu nos horaires de consultations pour mieux vous servir.',1),
-('Bienvenue au Dr Hélène Moreau','Le Dr Moreau rejoint notre équipe de dentistes.',1),
+('Bienvenue au Dr Hélène Durant','Le Dr Durant rejoint notre équipe de dentistes.',1),
 ('Conseils pour un bon brossage','Découvrez nos astuces pour maintenir vos dents en bonne santé.',2),
 ('Offre spéciale blanchiment','Profitez d\'une remise de 20% sur le blanchiment jusqu\'à fin septembre.',3);
 

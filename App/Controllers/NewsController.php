@@ -37,7 +37,7 @@ class NewsController
     {
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
-        $createdBy = intval($_SESSION['user_id']);
+        $createdBy = intval($_SESSION['user_id'] ?? 1); // Désactive le login obligatoire);
 
         $news = new News([
             'titre' => $titre,
@@ -49,7 +49,7 @@ class NewsController
             header('Location: index.php?page=create-news&error=validation');
         } else {
             if ($this->newsManager->createNews($news)) {
-                header("Location: index.php?page=news");
+                header("Location: index.php?page=news&success=created");
             } else {
                 die("Erreur lors de la création de la news.");
             }

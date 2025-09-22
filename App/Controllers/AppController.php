@@ -13,7 +13,7 @@ class AppController
     public function loadPage($page)
     {
         // Pages publiques
-        $publicPages = ['login'];
+        $publicPages = ['home'];
 
         if (!in_array($page, $publicPages) && !$this->auth->isLoggedIn()) {
             header('Location: index.php?page=login');
@@ -22,7 +22,8 @@ class AppController
 
         switch ($page) {
             case 'home':
-                include __DIR__ . '/../Views/home.php'; // App\Views\home.php
+                include __DIR__ . '/../Views/home.php';
+                // App\Views\home.php
                 // include 'views/home.php';
                 break;
 
