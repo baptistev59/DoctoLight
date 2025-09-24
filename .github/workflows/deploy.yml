@@ -21,6 +21,6 @@ jobs:
           switches: -avzr --delete
           path: ./
           remote_path: www/doctolight/
-          remote_host: ssh.alwaysdata.com
+          remote_host: ssh-baptistev59.alwaysdata.com
           remote_user: ${{ secrets.ALWAYSDATA_USER }}
           remote_key: ${{ secrets.ALWAYSDATA_SSH_KEY }}
