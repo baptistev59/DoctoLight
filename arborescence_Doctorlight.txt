@@ -1,0 +1,65 @@
+Structure du dossier pour le volume Data
+Le numéro de série du volume est 4E91-BD16
+D:.
+¦   arborescence.txt
+¦   arborescence_Doctorlight.txt
+¦   generer_arborescence.bat
+¦   
++---App
+¦   +---Controllers
+¦   ¦       AuthController.php
+¦   ¦       NewsController.php
+¦   ¦       RDVController.php
+¦   ¦       ServiceController.php
+¦   ¦       UserController.php
+¦   ¦       
+¦   +---Models
+¦   ¦       News.php
+¦   ¦       NewsManager.php
+¦   ¦       Roles.php
+¦   ¦       User.php
+¦   ¦       UserManager.php
+¦   ¦       
+¦   +---Views
+¦       ¦   403.php
+¦       ¦   404.php
+¦       ¦   home.php
+¦       ¦   
+¦       +---layouts
+¦       ¦       footer.php
+¦       ¦       header.php
+¦       ¦       
+¦       +---news
+¦       ¦       create.php
+¦       ¦       edit.php
+¦       ¦       list.php
+¦       ¦       shows.php
+¦       ¦       
+¦       +---rdv
+¦       +---services
+¦       +---users
+¦               create.php
+¦               edit.php
+¦               list.php
+¦               login.php
+¦               profile.php
+¦               register.php
+¦               
++---Config
+¦       config.php
+¦       Database.php
+¦       
++---Public
+¦   ¦   index.php
+¦   ¦   
+¦   +---css
+¦   +---images
++---SQL
+¦       datas.sql
+¦       schema.sql
+¦       
++---UML
+        class.puml
+        MPD.puml
+        usercase.puml
+        
