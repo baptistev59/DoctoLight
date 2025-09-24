@@ -1,0 +1,18 @@
+name: Mon premier workflow
+
+# Quand le lancer ?
+on:
+  push: # à chaque push
+    branches:
+      - main # uniquement sur la branche main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # machine virtuelle Linux fournie par GitHub
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v3 # télécharge ton dépôt
+
+      - name: Vérifier la version de PHP
+        run: php -v
