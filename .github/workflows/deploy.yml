@@ -25,7 +25,7 @@ jobs:
           switches: -avzr --delete
           path: ./
           remote_path: /home/baptistev59/www
-          remote_host: ssh-baptistev59.alwaysdata.net
+          remote_host: 185.31.41.85
           remote_port: 22
           remote_user: ${{ secrets.ALWAYSDATA_USER }}
           remote_key: ${{ secrets.ALWAYSDATA_SSH_KEY }}
