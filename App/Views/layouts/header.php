@@ -34,10 +34,10 @@
                 <?php
                 // Définition des liens par rôle
                 $menuLinks = [
-                    'ADMIN'      => ['Administration' => '/index.php?page=users'],
-                    'SECRETAIRE' => ['Tableau de bord' => '/index.php?page=dashboard'],
-                    'MEDECIN'    => ['Tableau de bord' => '/index.php?page=dashboard'],
-                    'PATIENT'    => ['Prendre RDV' => '/index.php?page=rdv'],
+                    'ADMIN'      => ['Administration' => BASE_URL . '/index.php?page=users'],
+                    'SECRETAIRE' => ['Tableau de bord' => BASE_URL . '/index.php?page=dashboard'],
+                    'MEDECIN'    => ['Tableau de bord' => BASE_URL . '/index.php?page=dashboard'],
+                    'PATIENT'    => ['Prendre RDV' => BASE_URL . '/index.php?page=rdv'],
                 ];
 
                 // Parcours tous les rôles de l'utilisateur et affiche les liens uniques
@@ -55,8 +55,8 @@
                 ?>
 
             <?php else: ?>
-                | <a href="/index.php?page=login">Connexion</a>
-                | <a href="/index.php?page=register">Inscription</a>
+                | <a href="<?= BASE_URL ?>index.php?page=login">Connexion</a>
+                | <a href="<?= BASE_URL ?>index.php?page=register">Inscription</a>
             <?php endif; ?>
         </nav>
         <hr>
