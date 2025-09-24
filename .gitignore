@@ -1,0 +1,41 @@
+# =======================
+# DoctoLight - .gitignore
+# =======================
+
+# Environnement & secrets
+.env
+.env.local
+
+# Logs & debug
+*.log
+*.sql
+*.sqlite
+*.bak
+*.tmp
+*.swp
+*.swo
+
+# Cache
+.cache/
+tmp/
+*.cache
+
+# IDE & OS files
+.idea/
+.vscode/
+*.iml
+*.sublime-workspace
+*.sublime-project
+
+# MacOS / Windows
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Déploiement / build
+/.github/
+*.tar.gz
+*.zip
+
+# Sauvegardes automatiques
+*~
