@@ -1,10 +1,13 @@
 Structure du dossier pour le volume Data
 Le numéro de série du volume est 4E91-BD16
 D:.
-¦   arborescence.txt
 ¦   arborescence_Doctorlight.txt
 ¦   generer_arborescence.bat
 ¦   
++---.github
+¦   +---workflows
+¦           deploy.yml
+¦           
 +---App
 ¦   +---Controllers
 ¦   ¦       AuthController.php
