@@ -3,8 +3,8 @@
 # =======================
 
 # Environnement & secrets
-.env.local
-.env
+Config/.env.local
+Config/.env
 
 # Logs & debug
 *.log
