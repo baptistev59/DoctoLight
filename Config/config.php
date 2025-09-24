@@ -1,6 +1,5 @@
 <?php
 $envFile = __DIR__ . '/.env';
-$envFileLocal = __DIR__ . '/.env.local';
 $env = [];
 
 // Lecture du fichier .env
@@ -13,22 +12,13 @@ if (file_exists($envFile)) {
         [$key, $value] = explode('=', $line, 2);
         $env[trim($key)] = trim($value);
     }
-} elseif (file_exists($envFileLocal)) {
-    foreach (file($envFileLocal, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-        // Ignorer les commentaires commençant par #
-        if (strpos(trim($line), '#') === 0) continue;
-
-        // Découpage clé=valeur
-        [$key, $value] = explode('=', $line, 2);
-        $env[trim($key)] = trim($value);
-    }
 }
 
 return [
-    'base_url'       => $env['BASE_URL'] ?? 'http://localhost/doctolight/',
-    'host'           => $env['DB_HOST'] ?? '127.0.0.1',
-    'db_name'        => $env['DB_NAME'] ?? '',
-    'username'       => $env['DB_USER'] ?? '',
-    'password'       => $env['DB_PASS'] ?? '',
+    'base_url'       => $env['BASE_URL'] ?? 'http://baptistev59.alwaysdata.net/doctolight/',
+    'host'           => $env['DB_HOST'] ?? 'mysql-baptistev59.alwaysdata.net',
+    'db_name'        => $env['DB_NAME'] ?? 'baptistev59_doctolight',
+    'username'       => $env['DB_USER'] ?? '428185',
+    'password'       => $env['DB_PASS'] ?? 'Teqapexa59!',
     'role_hierarchy' => explode(',', $env['ROLE_HIERARCHY'] ?? 'ADMIN,SECRETAIRE,MEDECIN,PATIENT'),
 ];
