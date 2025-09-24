@@ -25,8 +25,8 @@
         <?php endif; ?>
 
         <nav>
-            <a href="/index.php">Accueil</a> |
-            <a href="/index.php?page=news">Actualités</a>
+            <a href="<?= BASE_URL ?>index.php">Accueil</a> |
+            <a href="<?= BASE_URL ?>index.php?page=news">Actualités</a>
 
             <?php if ($user instanceof User): ?>
                 | <a href="/index.php?page=logout">Déconnexion</a>

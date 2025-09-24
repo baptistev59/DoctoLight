@@ -4,6 +4,7 @@
 
 # Environnement & secrets
 .env.local
+.env
 
 # Logs & debug
 *.log

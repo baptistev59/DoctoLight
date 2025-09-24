@@ -1,5 +1,13 @@
 <?php
+// Chargement de la config
+$config = require __DIR__ . '/../Config/config.php';
 
+
+
+// Définition de la constante BASE_URL (si pas déjà définie)
+if (!defined('BASE_URL')) {
+    define('BASE_URL', $config['base_url']);
+}
 /* Autoload des classes PHP (models et controllers) */
 spl_autoload_register(function ($class) {
     $paths = [
@@ -16,22 +24,12 @@ spl_autoload_register(function ($class) {
 /* On ouvre la session dès l'accès au site */
 session_start();
 
+var_dump(BASE_URL);
+exit;
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
-
-/* Autoload des classes PHP (models et controllers) */
-spl_autoload_register(function ($class) {
-    $paths = [
-        __DIR__ . '/../Config/',
-        __DIR__ . '/../App/Controllers/',
-        __DIR__ . '/../App/Models/'
-    ];
-    foreach ($paths as $path) {
-        $file = $path . $class . '.php';
-        if (file_exists($file)) require $file;
-    }
-});
 
 // Connexion DB
 $db = new Database();
@@ -95,7 +93,7 @@ $route = $routes[$page];
 // Vérification si accès public ou privé
 $isPublic = $route['public'] ?? false;
 if (!$isPublic && !$auth->isLoggedIn()) {
-    header('Location: index.php?page=login');
+    header('Location: ' . BASE_URL . 'index.php?page=login');
     exit;
 }
 
@@ -116,6 +114,8 @@ if (isset($route['view'])) {
     include $route['view'];
     exit;
 }
+
+
 
 // Sinon on appelle le contrôleur dynamiquement
 $controllerName = $route['controller'];
