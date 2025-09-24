@@ -1,4 +1,4 @@
-name: Deploy to alwaysData
+name: Deploy to AlwaysData
 
 on:
   push:
@@ -13,12 +13,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Debug DNS resolution
+        run: |
+          echo "Test DNS sur ssh-baptistev59.alwaysdata.net"
+          ping -c 3 ssh-baptistev59.alwaysdata.net || true
+          nslookup ssh-baptistev59.alwaysdata.net || true
+
       - name: Deploy to alwaysData via SSH
         uses: burnett01/rsync-deployments@5.2
         with:
           switches: -avzr --delete
           path: ./
-          remote_path: www/doctolight/
+          remote_path: /home/baptistev59/www
           remote_host: ssh-baptistev59.alwaysdata.net
+          remote_port: 22
           remote_user: ${{ secrets.ALWAYSDATA_USER }}
           remote_key: ${{ secrets.ALWAYSDATA_SSH_KEY }}
