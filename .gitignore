@@ -3,7 +3,6 @@
 # =======================
 
 # Environnement & secrets
-.env
 .env.local
 
 # Logs & debug
