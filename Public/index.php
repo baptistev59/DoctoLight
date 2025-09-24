@@ -24,8 +24,8 @@ spl_autoload_register(function ($class) {
 /* On ouvre la session dès l'accès au site */
 session_start();
 
-var_dump(BASE_URL);
-exit;
+// var_dump(BASE_URL);
+// exit;
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
