@@ -10,11 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Étape 1 : Récupérer mon code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Étape 2 : Déploiement via rsync
       - name: Deploy to alwaysData via SSH
         uses: burnett01/rsync-deployments@5.2
         with:
