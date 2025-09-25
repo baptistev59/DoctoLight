@@ -1,61 +1,53 @@
-<!-- App/Views/users/edit.php -->
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<div class="container mt-5">
-    <h2>Modifier l'utilisateur</h2>
+<h1>Éditer l'utilisateur</h1>
 
-    <form method="POST" action="index.php?page=updateUser&id=<?= $user->getId() ?>">
-        <div class="mb-3">
-            <label for="prenom" class="form-label">Prénom</label>
-            <input type="text" class="form-control" id="prenom" name="prenom"
-                value="<?= htmlspecialchars($user->getPrenom()) ?>" required>
-        </div>
+<?php if (!empty($_SESSION['success'])): ?>
+    <div style="color: green;"><?= htmlspecialchars($_SESSION['success']);
+                                unset($_SESSION['success']); ?></div>
+<?php endif; ?>
 
-        <div class="mb-3">
-            <label for="nom" class="form-label">Nom</label>
-            <input type="text" class="form-control" id="nom" name="nom"
-                value="<?= htmlspecialchars($user->getNom()) ?>" required>
-        </div>
+<?php if (!empty($_SESSION['error'])): ?>
+    <div style="color: red;"><?= htmlspecialchars($_SESSION['error']);
+                                unset($_SESSION['error']); ?></div>
+<?php endif; ?>
 
-        <div class="mb-3">
-            <label for="email" class="form-label">Adresse email</label>
-            <input type="email" class="form-control" id="email" name="email"
-                value="<?= htmlspecialchars($user->getEmail()) ?>" required>
-        </div>
+<?php
+// Déterminer les valeurs à afficher dans le formulaire selon GET ou POST
+$nom = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['nom'] ?? '') : "";
+$prenom = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['prenom'] ?? '') : $user->getPrenom();
+$email = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['email'] ?? '') : $user->getEmail();
+$dateNaissance = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['date_naissance'] ?? '') : $user->getDateNaissance();
+$isActive = $_SERVER['REQUEST_METHOD'] === 'POST' ? isset($_POST['is_active']) : $user->isActive();
+$selectedRoles = $_SERVER['REQUEST_METHOD'] === 'POST' ? ($_POST['roles'] ?? []) : $user->getRoles();
+?>
 
-        <div class="mb-3">
-            <label for="date_naissance" class="form-label">Date de naissance</label>
-            <input type="date" class="form-control" id="date_naissance" name="date_naissance"
-                value="<?= htmlspecialchars($user->getDateNaissance() ?? '') ?>">
-        </div>
+<form method="POST" action="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $user->getId() ?>">
+    <label>Nom :</label><br>
+    <input type="text" name="nom" value="<?= htmlspecialchars($nom) ?>" required><br>
 
-        <div class="mb-3">
-            <label for="roles" class="form-label">Rôle(s)</label>
-            <select id="roles" name="roles[]" class="form-select" multiple required>
-                <?php foreach ($config['role_hierarchy'] as $role): ?>
-                    <option value="<?= $role ?>"
-                        <?= in_array($role, $user->getRoles(), true) ? 'selected' : '' ?>>
-                        <?= $role ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-            <small class="form-text text-muted">Maintenir Ctrl (ou Cmd sur Mac) pour sélectionner plusieurs rôles.</small>
-        </div>
+    <label>Prénom :</label><br>
+    <input type="text" name="prenom" value="<?= htmlspecialchars($prenom) ?>" required><br>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
-            <input type="password" class="form-control" id="password" name="password">
-        </div>
+    <label>Email :</label><br>
+    <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" required><br>
 
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" id="is_active" name="is_active"
-                <?= $user->isActive() ? 'checked' : '' ?>>
-            <label class="form-check-label" for="is_active">Compte actif</label>
-        </div>
+    <label>Date de naissance :</label><br>
+    <input type="date" name="date_naissance" value="<?= htmlspecialchars($dateNaissance) ?>"><br>
 
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <a href="index.php?page=users" class="btn btn-secondary">Annuler</a>
-    </form>
-</div>
+    <label>Actif :</label>
+    <input type="checkbox" name="is_active" value="1" <?= $isActive ? 'checked' : '' ?>><br>
+
+    <label>Rôles :</label><br>
+    <?php foreach ($roles as $role): ?>
+        <input type="checkbox" name="roles[]" value="<?= htmlspecialchars($role->getName()) ?>"
+            <?= in_array($role->getName(), $selectedRoles, true) ? 'checked' : '' ?>>
+        <?= htmlspecialchars($role->getName()) ?><br>
+    <?php endforeach; ?>
+
+    <button type="submit">Mettre à jour</button>
+</form>
+
+<a href="<?= BASE_URL ?>index.php?page=users">Retour à la liste</a>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

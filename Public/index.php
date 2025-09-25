@@ -24,9 +24,6 @@ spl_autoload_register(function ($class) {
 /* On ouvre la session dès l'accès au site */
 session_start();
 
-// var_dump(BASE_URL);
-// exit;
-
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -55,7 +52,13 @@ $routes = [
     'rdv'      => ['controller' => 'RDVController', 'method' => 'listRDV', 'role' => 'SECRETAIRE'],
 
     // Users (admin only)
-    'users'    => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],
+    'users'          => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],
+    'users_create'   => ['controller' => 'UserController', 'method' => 'create', 'role' => 'ADMIN'],
+    'users_edit'     => ['controller' => 'UserController', 'method' => 'edit', 'role' => 'ADMIN'],
+    'users_delete'   => ['controller' => 'UserController', 'method' => 'delete', 'role' => 'ADMIN'],
+    'users_view'     => ['controller' => 'UserController', 'method' => 'view', 'role' => 'ADMIN'],
+    'users_toggle'   => ['controller' => 'UserController', 'method' => 'toggleActive', 'role' => 'ADMIN'],
+
 
     // Services
     'services' => ['controller' => 'ServiceController', 'method' => 'listServices', 'role' => 'SECRETAIRE'],
@@ -65,16 +68,16 @@ $routes = [
     'news_show'         => ['controller' => 'NewsController', 'method' => 'show', 'public' => true],
     'create-news'       => ['controller' => 'NewsController', 'method' => 'create', 'role' => 'SECRETAIRE'],
     'create-news-valid' => ['controller' => 'NewsController', 'method' => 'createValid', 'role' => 'SECRETAIRE'],
-    'edit-news'         => ['controller' => 'NewsController', 'method' => 'editForm', 'role' => 'ADMIN'],
+    'edit-news'         => ['controller' => 'NewsController', 'method' => 'editForm', 'role' => 'SECRETAIRE'],
     'update-news'       => ['controller' => 'NewsController', 'method' => 'update', 'role' => 'SECRETAIRE'],
     'delete-news'       => ['controller' => 'NewsController', 'method' => 'delete', 'role' => 'SECRETAIRE'],
 
 
     // Auth
-    // 'login'  => ['view' => __DIR__ . '/../App/Views/users/login.php', 'public' => true],
+
     'login' => ['controller' => 'AuthController', 'method' => 'login', 'public' => true],
-    'logout' => ['controller' => 'AuthController', 'method' => 'logout'],
-    // 'register' => ['view' => __DIR__ . '/../App/Views/users/register.php', 'public' => true],
+    'logout' => ['controller' => 'AuthController', 'method' => 'logout', 'public' => true],
+
     'register' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
     'register-valid' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
 ];
@@ -88,6 +91,7 @@ if (!isset($routes[$page])) {
     exit;
 }
 
+// Gestion des routes via le tableau de routes
 $route = $routes[$page];
 
 // Vérification si accès public ou privé
@@ -105,27 +109,42 @@ if (isset($route['role'])) {
 // Si c’est une simple vue
 if (isset($route['view'])) {
     $data = [];
-
     if (isset($route['data']) && is_callable($route['data'])) {
         $data = $route['data']($pdo);
     }
-
     extract($data);
     include $route['view'];
     exit;
 }
 
+// Sinon on appelle le contrôleur dynamique
+if (isset($route['controller']) && isset($route['method'])) {
+    $controllerName = $route['controller'];
+    $method         = $route['method'];
 
+    // Passe PDO + AuthController au constructeur
+    $controller = new $controllerName($pdo, $config);
 
-// Sinon on appelle le contrôleur dynamiquement
-$controllerName = $route['controller'];
-$method         = $route['method'];
+    // Cas spécial pour les méthodes nécessitant un ID
+    if (in_array($method, ['edit', 'delete', 'view', 'toggleActive'])) {
+        $id = $_GET['id'] ?? null;
+        if ($id !== null) {
+            $controller->$method((int)$id);
+            exit;
+        } else {
+            header("HTTP/1.0 400 Bad Request");
+            echo "ID manquant pour la méthode $method.";
+            exit;
+        }
+    }
 
-$controller = new $controllerName($pdo);
+    // Cas spécial listRDV -> besoin de l’ID utilisateur
+    if ($method === 'listRDV') {
+        $controller->$method($_SESSION['user']->getId());
+        exit;
+    }
 
-// Cas spécial RDV -> besoin de l’id user
-if ($method === 'listRDV') {
-    $controller->$method($_SESSION['user']->getId());
-} else {
+    // Méthode standard sans paramètre
     $controller->$method();
+    exit;
 }

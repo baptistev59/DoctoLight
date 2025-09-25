@@ -1,55 +1,87 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<h1>Gestion des utilisateurs</h1>
+<h1>Liste des utilisateurs</h1>
 
-<?php if ($currentUser && $currentUser->hasRole('ADMIN')): ?>
-    <p>
-        <a href="index.php?page=users&action=create" class="btn btn-primary">Créer un utilisateur</a>
-    </p>
+<?php if (!empty($_SESSION['success'])): ?>
+    <div style="color: green;"><?= htmlspecialchars($_SESSION['success']);
+                                unset($_SESSION['success']); ?></div>
+<?php endif; ?>
+<?php if (!empty($_SESSION['error'])): ?>
+    <div style="color: red;"><?= htmlspecialchars($_SESSION['error']);
+                                unset($_SESSION['error']); ?></div>
 <?php endif; ?>
 
-<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<!-- Formulaire de recherche -->
+<form method="GET" action="<?= BASE_URL ?>index.php">
+    <input type="hidden" name="page" value="users">
+    <input type="text" name="search" placeholder="Rechercher..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+    <button type="submit">Rechercher</button>
+</form>
+
+<!-- Lien création utilisateur -->
+<a href="<?= BASE_URL ?>index.php?page=users_create">Créer un nouvel utilisateur</a>
+
+<?php
+$order = $_GET['order'] ?? 'ASC';
+$newOrder = $order === 'ASC' ? 'DESC' : 'ASC';
+$searchParam = urlencode($_GET['search'] ?? '');
+$sortParam = urlencode($_GET['sort'] ?? 'id');
+
+// Vérifier si l'utilisateur connecté est ADMIN
+$isAdmin = in_array('ADMIN', $_SESSION['user']->getRoles(), true);
+
+?>
+
+<table border="1" cellpadding="5" cellspacing="0">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Email</th>
-            <th>Rôles</th>
-            <th>Date de naissance</th>
-            <?php if ($currentUser && $currentUser->hasRole('ADMIN')): ?>
-                <th>Actions</th>
-            <?php endif; ?>
+            <th><a href="<?= BASE_URL ?>index.php?page=users&sort=nom&order=<?= $newOrder ?>&search=<?= $searchParam ?>">Nom</a></th>
+            <th><a href="<?= BASE_URL ?>index.php?page=users&sort=prenom&order=<?= $newOrder ?>&search=<?= $searchParam ?>">Prénom</a></th>
+            <th><a href="<?= BASE_URL ?>index.php?page=users&sort=email&order=<?= $newOrder ?>&search=<?= $searchParam ?>">Email</a></th>
+            <th>Actif</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         <?php if (!empty($users)): ?>
             <?php foreach ($users as $user): ?>
                 <tr>
-                    <td><?= htmlspecialchars($user->getId()) ?></td>
-                    <td><?= htmlspecialchars($user->getNom()) ?></td>
+                    <td><a href="<?= BASE_URL ?>index.php?page=users_view&id=<?= $user->getId() ?>"><?= htmlspecialchars($user->getNom()) ?></a></td>
                     <td><?= htmlspecialchars($user->getPrenom()) ?></td>
                     <td><?= htmlspecialchars($user->getEmail()) ?></td>
-                    <td><?= htmlspecialchars(implode(', ', $user->getRoles())) ?></td>
-                    <td><?= htmlspecialchars($user->getDateNaissance()) ?></td>
-
-                    <?php if ($currentUser && $currentUser->hasRole('ADMIN')): ?>
-                        <td>
-                            <a href="index.php?page=users&action=edit&id=<?= $user->getId() ?>">✏️ Éditer</a> |
-                            <a href="index.php?page=users&action=delete&id=<?= $user->getId() ?>"
-                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');">
-                                🗑️ Supprimer
-                            </a>
-                        </td>
-                    <?php endif; ?>
+                    <td>
+                        <?php if ($isAdmin && $user->getId() !== $_SESSION['user']->getId()): ?>
+                            <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle">
+                                <input type="hidden" name="id" value="<?= $user->getId() ?>">
+                                <input type="checkbox" name="is_active" <?= $user->isActive() ? 'checked' : '' ?>
+                                    onclick="if(!confirm('Voulez-vous vraiment <?= $user->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?')) return false; this.form.submit();">
+                            </form>
+                        <?php else: ?>
+                            <?= $user->isActive() ? 'Oui' : 'Non' ?>
+                        <?php endif; ?>
+                    </td>
+                    <td>
+                        <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $user->getId() ?>">Éditer</a> |
+                        <a href="<?= BASE_URL ?>index.php?page=users_delete&id=<?= $user->getId() ?>"
+                            onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?');">Supprimer</a>
+                    </td>
                 </tr>
             <?php endforeach; ?>
         <?php else: ?>
             <tr>
-                <td colspan="7">Aucun utilisateur trouvé.</td>
+                <td colspan="5">Aucun utilisateur trouvé.</td>
             </tr>
         <?php endif; ?>
     </tbody>
 </table>
+
+<!-- Pagination -->
+<?php if (isset($totalPages) && $totalPages > 1): ?>
+    <div>
+        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+            <a href="<?= BASE_URL ?>index.php?page=users&search=<?= $searchParam ?>&sort=<?= $sortParam ?>&order=<?= $order ?>&page_num=<?= $i ?>"><?= $i ?></a>
+        <?php endfor; ?>
+    </div>
+<?php endif; ?>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

@@ -23,13 +23,14 @@ class UserManager
             return null;
         }
 
-        // Charger les rôles
+        // Charger les rôles de l'utilisateur
         $roles = $this->getRoles((int)$data['id']);
         $data['roles'] = $roles;
 
-        // Déterminer rôle le plus élevé
+        // Déterminer le rôle le plus élevé
         $data['highest_role'] = $this->determineHighestRole($roles);
 
+        // Retourner un objet User
         return new User($data);
     }
 
@@ -77,6 +78,85 @@ class UserManager
 
         return $users;
     }
+
+    // Récupérer les utilisateurs avec recherche, tri et pagination
+    public function findAllWithFilters(string $search = '', string $sort = 'id', string $order = 'ASC', int $limit = 10, int $offset = 0): array
+    {
+        $allowedSort = ['id', 'nom', 'prenom', 'email'];
+        if (!in_array($sort, $allowedSort, true)) {
+            $sort = 'id';
+        }
+
+        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+
+        $params = [];
+        $sql = "SELECT * FROM users WHERE 1";
+
+        if ($search !== '') {
+            $sql .= " AND (nom LIKE :search OR prenom LIKE :search OR email LIKE :search)";
+            $params[':search'] = "%$search%";
+        }
+
+        $sql .= " ORDER BY $sort $order LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+        $usersData = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $users = [];
+        foreach ($usersData as $data) {
+            $roles = $this->getRoles((int)$data['id']);
+            $data['roles'] = $roles;
+            $data['highest_role'] = $this->determineHighestRole($roles);
+            $users[] = new User($data);
+        }
+
+        // Calcul du nombre total pour la pagination
+        $countSql = "SELECT COUNT(*) FROM users WHERE 1";
+        if ($search !== '') {
+            $countSql .= " AND (nom LIKE :search OR prenom LIKE :search OR email LIKE :search)";
+        }
+        $countStmt = $this->pdo->prepare($countSql);
+        if ($search !== '') {
+            $countStmt->bindValue(':search', "%$search%");
+        }
+        $countStmt->execute();
+        $totalUsers = (int)$countStmt->fetchColumn();
+        $totalPages = ceil($totalUsers / $limit);
+
+        return [
+            'users'      => $users,
+            'totalPages' => $totalPages,
+            'totalPages' => $totalPages,
+        ];
+    }
+
+    // Activer / désactiver un utilisateur
+    public function toggleActive(User $user): void
+    {
+        $newStatus = $user->isActive() ? 0 : 1;
+        $stmt = $this->pdo->prepare("UPDATE users SET is_active = :status WHERE id = :id");
+        $stmt->execute([
+            ':status' => $newStatus,
+            ':id'     => $user->getId(),
+        ]);
+    }
+
+    public function setActive(User $user, bool $active): void
+    {
+        $stmt = $this->pdo->prepare("UPDATE users SET is_active = :status WHERE id = :id");
+        $stmt->execute([
+            ':status' => $active ? 1 : 0,
+            ':id'     => $user->getId(),
+        ]);
+    }
+
 
     // Créer un utilisateur
     public function createUser(array $data): ?User
@@ -149,45 +229,7 @@ class UserManager
         }
     }
 
-    // Cherche un rôle par son nom
-    private function getRoleIdByName(string $roleName): ?int
-    {
-        $sql = "SELECT id FROM roles WHERE name = :name LIMIT 1";
-        $request = $this->pdo->prepare($sql);
-        $request->execute([':name' => $roleName]);
-        $id = $request->fetchColumn();
 
-        return $id ? (int)$id : null;
-    }
-
-    // Récupérer les rôles d’un utilisateur
-    public function getRoles(int $userId): array
-    {
-        $sql = "SELECT r.name
-                FROM user_roles ur
-                JOIN roles r ON ur.role_id = r.id
-                WHERE ur.user_id = :user_id";
-        $params = [':user_id' => $userId];
-
-        $request = $this->pdo->prepare($sql);
-        $request->execute($params);
-
-        // Retourne un tableau simple ['ADMIN', 'MEDECIN']
-        return $request->fetchAll(PDO::FETCH_COLUMN);
-    }
-
-    // Déterminer le rôle le plus élevé d’un tableau de rôles
-    private function determineHighestRole(array $roles): ?string
-    {
-        $hierarchy = $this->config['role_hierarchy'] ?? ['ADMIN', 'SECRETAIRE', 'MEDECIN', 'PATIENT'];
-
-        foreach ($hierarchy as $role) {
-            if (in_array($role, $roles, true)) {
-                return $role;
-            }
-        }
-        return null; // Aucun rôle trouvé
-    }
 
     // mise à jour du user avec un rollback
     public function updateUser(User $user, array $data): ?User
@@ -244,5 +286,62 @@ class UserManager
             error_log("Erreur mise à jour utilisateur : " . $e->getMessage());
             return null;
         }
+    }
+
+
+    // Cherche un rôle par son nom
+    private function getRoleIdByName(string $roleName): ?int
+    {
+        $sql = "SELECT id FROM roles WHERE name = :name LIMIT 1";
+        $request = $this->pdo->prepare($sql);
+        $request->execute([':name' => $roleName]);
+        $id = $request->fetchColumn();
+
+        return $id ? (int)$id : null;
+    }
+
+    // Récupérer les rôles d’un utilisateur
+    public function getRoles(int $userId): array
+    {
+        $sql = "SELECT r.id, r.name
+                FROM user_roles ur
+                JOIN roles r ON ur.role_id = r.id
+                WHERE ur.user_id = :user_id";
+        $params = [':user_id' => $userId];
+
+        $request = $this->pdo->prepare($sql);
+        $request->execute($params);
+
+
+        $rolesData = $request->fetchAll(PDO::FETCH_ASSOC);
+
+        $roles = array_map(fn($r) => new Role($r), $rolesData);
+
+        return $roles;
+    }
+
+    // Déterminer le rôle le plus élevé d’un tableau de rôles
+    private function determineHighestRole(array $roles): ?string
+    {
+        $hierarchy = $this->config['role_hierarchy'] ?? ['ADMIN', 'SECRETAIRE', 'MEDECIN', 'PATIENT'];
+
+        foreach ($hierarchy as $roleName) {
+            foreach ($roles as $roleObj) {
+                if ($roleObj instanceof Role && $roleObj->getName() === $roleName) {
+                    return $roleName;
+                }
+            }
+        }
+
+        return null; // Aucun rôle trouvé
+    }
+
+    // Récupère tous les rôle pour les chekbox
+    public function getAllRoles(): array
+    {
+        $stmt = $this->pdo->query("SELECT * FROM roles");
+        $rolesData =  $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map(fn($r) => new Role($r), $rolesData);
     }
 }

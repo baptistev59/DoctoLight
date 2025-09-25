@@ -1,18 +1,36 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<div class="container mt-5">
-    <h2>Mon profil</h2>
+<h1>Fiche de l'utilisateur</h1>
 
-    <?php if (isset($_SESSION['user']) && $_SESSION['user'] instanceof User): ?>
-        <p><strong>Nom :</strong> <?= htmlspecialchars($_SESSION['user']->getNom()) ?></p>
-        <p><strong>Prénom :</strong> <?= htmlspecialchars($_SESSION['user']->getPrenom()) ?></p>
-        <p><strong>Email :</strong> <?= htmlspecialchars($_SESSION['user']->getEmail()) ?></p>
-        <p><strong>Rôle principal :</strong> <?= htmlspecialchars($_SESSION['user']->getHighestRole()) ?></p>
-        <a href="index.php?page=logout" class="btn btn-danger">Se déconnecter</a>
-    <?php else: ?>
-        <p>Vous n’êtes pas connecté.</p>
-        <a href="index.php?page=login" class="btn btn-primary">Connexion</a>
-    <?php endif; ?>
-</div>
+<?php if (!empty($_SESSION['success'])): ?>
+    <div style="color: green;"><?= htmlspecialchars($_SESSION['success']);
+                                unset($_SESSION['success']); ?></div>
+<?php endif; ?>
+<?php if (!empty($_SESSION['error'])): ?>
+    <div style="color: red;"><?= htmlspecialchars($_SESSION['error']);
+                                unset($_SESSION['error']); ?></div>
+<?php endif; ?>
+
+<p><strong>Nom :</strong> <?= htmlspecialchars($userToView->getNom()) ?></p>
+<p><strong>Prénom :</strong> <?= htmlspecialchars($userToView->getPrenom()) ?></p>
+<p><strong>Email :</strong> <?= htmlspecialchars($userToView->getEmail()) ?></p>
+<p><strong>Date de naissance :</strong> <?= htmlspecialchars($userToView->getDateNaissance()) ?></p>
+<p><strong>Actif :</strong>
+    <?= $userToView->isActive() ? 'Oui' : 'Non' ?>
+</p>
+
+<?php if ($_SESSION['user']->hasRole('ADMIN') && $userToView->getId() !== $_SESSION['user']->getId()): ?>
+    <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle" style="display:inline;">
+        <input type="hidden" name="id" value="<?= $userToView->getId() ?>">
+        <button type="submit" onclick="return confirm('Voulez-vous vraiment <?= $userToView->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?');">
+            <?= $userToView->isActive() ? 'Désactiver' : 'Activer' ?>
+        </button>
+    </form>
+<?php endif; ?>
+
+<p><strong>Rôles :</strong> <?= implode(', ', array_map(fn($r) => htmlspecialchars($r->getName()), $userToView->getRoles())) ?></p>
+
+<a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Éditer</a> |
+<a href="<?= BASE_URL ?>index.php?page=users">Retour à la liste</a>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

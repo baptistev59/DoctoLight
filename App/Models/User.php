@@ -22,10 +22,9 @@ class User
         $this->date_naissance = $data['date_naissance'] ?? null;
         $this->is_active = (bool)$data['is_active'];
         $this->roles = $data['roles'] ?? [];
-        $this->highestRole = $this->computeHighestRole();
+        $this->highestRole = $data['highest_role'] ?? $this->computeHighestRole();
     }
-
-    // ------------------ Getters ------------------ //
+    // Getters
     public function getId(): int
     {
         return $this->id;
@@ -60,10 +59,10 @@ class User
     }
     public function getHighestRole(): ?string
     {
-        return $this->highestRole;
+        return $this->computeHighestRole();
     }
 
-    // ------------------ Roles ------------------ //
+    // Roles
     public function setRoles(array $roles): void
     {
         $this->roles = $roles;
@@ -75,14 +74,25 @@ class User
         if (empty($this->roles)) return null;
 
         $config = require __DIR__ . '/../../Config/config.php';
-        $hierarchy = $config['role_hierarchy'];
+        $hierarchy = $config['role_hierarchy'] ?? ['ADMIN', 'SECRETAIRE', 'MEDECIN', 'PATIENT'];
 
-        foreach ($hierarchy as $role) {
-            if (in_array($role, $this->roles, true)) {
-                return $role;
+        foreach ($hierarchy as $roleName) {
+            foreach ($this->roles as $role) {
+                if ($role instanceof Role && $role->getName() === $roleName) {
+                    return $roleName;
+                }
             }
         }
 
         return null;
+    }
+    public function hasRole(string $roleName): bool
+    {
+        foreach ($this->roles as $role) {
+            if ($role instanceof Role && $role->getName() === $roleName) {
+                return true;
+            }
+        }
+        return false;
     }
 }
