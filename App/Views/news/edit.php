@@ -4,6 +4,9 @@
 
 <form action="index.php?page=update-news&id=<?= $news->getId(); ?>" method="post">
     <div>
+        <!-- Insertion du token de sécurité -->
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+
         <label for="titre">Titre :</label>
         <input type="text" id="titre" name="titre" value="<?= htmlspecialchars($news->getTitre()); ?>" required>
     </div>

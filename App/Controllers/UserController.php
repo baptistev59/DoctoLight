@@ -17,6 +17,9 @@ class UserController
     {
         $this->authController->requireRole('ADMIN'); // admin only
 
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
+
         // Récupérer les filtres depuis $_GET
         $search    = $_GET['search'] ?? '';
         $sort      = $_GET['sort'] ?? 'id';
@@ -35,10 +38,24 @@ class UserController
         include __DIR__ . '/../Views/users/list.php';
     }
 
-    // Affichage d’un utilisateur (admin uniquement)
+    // Affichage d’un utilisateur (admin, médecin, secrétaire ou le patient lui-même)
     public function view(int $id): void
     {
-        $this->authController->requireRole('ADMIN'); // admin only
+        $currentUser = $_SESSION['user'] ?? null;
+
+        if (!$currentUser instanceof User) {
+            header("Location: index.php?page=login");
+            exit;
+        }
+
+        $isAdminOrStaff = $this->authController->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE']);
+
+        // Patient ne peut voir que sa propre fiche
+        if (!$isAdminOrStaff && $currentUser->getId() !== $id) {
+            header("HTTP/1.0 403 Forbidden");
+            echo "Accès interdit.";
+            exit;
+        }
 
         $userToView = $this->userManager->findById($id);
         if (!$userToView) {
@@ -47,8 +64,11 @@ class UserController
             exit;
         }
 
-        // Récupérer tous les rôles disponibles pour l'affichage (optionnel)
-        $roles = $this->userManager->getAllRoles();
+        // Récupérer les rôles uniquement si admin ou staff
+        $roles = [];
+        if ($isAdminOrStaff) {
+            $roles = $this->userManager->getAllRoles();
+        }
 
         include __DIR__ . '/../Views/users/profile.php';
     }
@@ -57,6 +77,9 @@ class UserController
     public function toggleActive(int $id): void
     {
         $this->authController->requireRole('ADMIN'); // admin only
+
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
 
         // Evite de désactiver son propre compte
         if ($id === $_SESSION['user']->getId()) {
@@ -83,6 +106,9 @@ class UserController
     {
         $this->authController->requireRole('ADMIN'); // admin only
 
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'nom'            => $_POST['nom'] ?? '',
@@ -108,50 +134,92 @@ class UserController
         include __DIR__ . '/../Views/users/create.php';
     }
 
-    // Édition d’un utilisateur (admin uniquement)
+
+    // Édition d’un utilisateur (admin, médecin, secrétaire ou le patient lui-même)
     public function edit(int $id): void
     {
-        $this->authController->requireRole('ADMIN'); // admin only
+        $userLogged = $_SESSION['user'] ?? null;
+        if (!$userLogged) {
+            header("Location: index.php?page=login");
+            exit;
+        }
 
-        $user = $this->userManager->findById($id);
-
-        if (!$user) {
+        $userToEdit = $this->userManager->findById($id);
+        if (!$userToEdit) {
             header("HTTP/1.0 404 Not Found");
             echo "Utilisateur introuvable.";
             exit;
         }
+
+        // Vérifie si l'utilisateur connecté a le droit :
+        // - Admin, médecin ou secrétaire : peuvent éditer n'importe qui
+        // - Patient : seulement sa propre fiche
+        $allowedRoles = ['ADMIN', 'MEDECIN', 'SECRETAIRE'];
+        $canEdit = false;
+
+        foreach ($allowedRoles as $role) {
+            if (in_array($role, $userLogged->getRoles())) {
+                $canEdit = true;
+                break;
+            }
+        }
+
+        if (!$canEdit && $userLogged->getId() !== $id) {
+            $_SESSION['error'] = "Vous n'avez pas les droits pour modifier ce profil.";
+            header("Location: index.php?page=users");
+            exit;
+        }
+
+        // Vérification du CSRF token (seulement sur POST)
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->authController->checkCsrfToken();
+
             $data = [
                 'nom'            => $_POST['nom'] ?? '',
                 'prenom'         => $_POST['prenom'] ?? '',
                 'email'          => $_POST['email'] ?? '',
                 'date_naissance' => $_POST['date_naissance'] ?? null,
-                'is_active'      => isset($_POST['is_active']) ? 1 : 0,
-                'roles'          => $_POST['roles'] ?? [],
             ];
+
+            // Seuls admin / secrétaire / médecin peuvent modifier "is_active" et "roles"
+            if ($canEdit) {
+                $data['is_active'] = isset($_POST['is_active']) ? 1 : 0;
+                $data['roles']     = $_POST['roles'] ?? [];
+            }
 
             // Mot de passe modifiable uniquement si rempli
             if (!empty($_POST['password'])) {
+                if ($_POST['password'] !== ($_POST['password_confirm'] ?? '')) {
+                    $_SESSION['error'] = "Les mots de passe ne correspondent pas.";
+                    header("Location: index.php?page=users&action=edit&id=" . $id);
+                    exit;
+                }
                 $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
             }
 
-            $updatedUser = $this->userManager->updateUser($user, $data);
-
-            die;
+            $updatedUser = $this->userManager->updateUser($userToEdit, $data);
 
             if ($updatedUser instanceof User) {
-                $_SESSION['success'] = "Utilisateur mis à jour avec succès.";
-                header("Location: index.php?page=users");
+                $_SESSION['success'] = "Profil mis à jour avec succès.";
+                // Redirection :
+                if (in_array('ADMIN', $userLogged->getRoles())) {
+                    header("Location: index.php?page=users");
+                } else {
+                    header("Location: index.php?page=users&action=view&id=" . $id);
+                }
                 exit;
             } else {
-                $error = "Erreur lors de la mise à jour de l’utilisateur.";
+                $_SESSION['error'] = "Erreur lors de la mise à jour.";
             }
         }
-        // Récupérer tous les rôles disponibles pour afficher les checkbox
-        $rolesData = $this->userManager->getAllRoles();
+
+        // Récupérer les rôles disponibles seulement si admin/médecin/secrétaire
         $roles = [];
-        foreach ($rolesData as $r) {
-            $roles[] = new Role($r);
+        if ($canEdit) {
+            $rolesData = $this->userManager->getAllRoles();
+            foreach ($rolesData as $r) {
+                $roles[] = new Role($r);
+            }
         }
 
         include __DIR__ . '/../Views/users/edit.php';
@@ -161,6 +229,9 @@ class UserController
     public function delete(int $id): void
     {
         $this->authController->requireRole('ADMIN'); // admin only
+
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
 
         // Evite la suppression de son compte Admin
         if ($id === $_SESSION['user']->getId()) {

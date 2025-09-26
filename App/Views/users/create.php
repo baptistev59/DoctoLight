@@ -12,6 +12,9 @@
 <?php endif; ?>
 
 <form method="POST" action="<?= BASE_URL ?>index.php?page=users_create">
+    <!-- Insertion du token de sécurité -->
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+
     <label>Nom :</label><br>
     <input type="text" name="nom" value="<?= htmlspecialchars($_POST['nom'] ?? '') ?>" required><br>
 

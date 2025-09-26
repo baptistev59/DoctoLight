@@ -18,9 +18,6 @@
     <button type="submit">Rechercher</button>
 </form>
 
-<!-- Lien création utilisateur -->
-<a href="<?= BASE_URL ?>index.php?page=users_create">Créer un nouvel utilisateur</a>
-
 <?php
 $order = $_GET['order'] ?? 'ASC';
 $newOrder = $order === 'ASC' ? 'DESC' : 'ASC';
@@ -28,9 +25,15 @@ $searchParam = urlencode($_GET['search'] ?? '');
 $sortParam = urlencode($_GET['sort'] ?? 'id');
 
 // Vérifier si l'utilisateur connecté est ADMIN
-$isAdmin = in_array('ADMIN', $_SESSION['user']->getRoles(), true);
+$roles = array_map(fn($role) => strtoupper($role->getName()), $_SESSION['user']->getRoles());
+$isAdmin = $_SESSION['user']->hasRole('ADMIN');
 
 ?>
+
+<!-- Lien création utilisateur (seulement si ADMIN) -->
+<?php if ($isAdmin): ?>
+    <a href="<?= BASE_URL ?>index.php?page=users_create">Créer un nouvel utilisateur</a>
+<?php endif; ?>
 
 <table border="1" cellpadding="5" cellspacing="0">
     <thead>
@@ -61,9 +64,13 @@ $isAdmin = in_array('ADMIN', $_SESSION['user']->getRoles(), true);
                         <?php endif; ?>
                     </td>
                     <td>
-                        <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $user->getId() ?>">Éditer</a> |
-                        <a href="<?= BASE_URL ?>index.php?page=users_delete&id=<?= $user->getId() ?>"
-                            onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?');">Supprimer</a>
+                        <?php if ($isAdmin): ?>
+                            <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $user->getId() ?>">Éditer</a> |
+                            <a href="<?= BASE_URL ?>index.php?page=users_delete&id=<?= $user->getId() ?>"
+                                onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?');">Supprimer</a>
+                        <?php else: ?>
+                            -
+                        <?php endif; ?>
                     </td>
                 </tr>
             <?php endforeach; ?>

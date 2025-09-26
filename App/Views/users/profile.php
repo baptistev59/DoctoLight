@@ -14,23 +14,39 @@
 <p><strong>Nom :</strong> <?= htmlspecialchars($userToView->getNom()) ?></p>
 <p><strong>Prénom :</strong> <?= htmlspecialchars($userToView->getPrenom()) ?></p>
 <p><strong>Email :</strong> <?= htmlspecialchars($userToView->getEmail()) ?></p>
-<p><strong>Date de naissance :</strong> <?= htmlspecialchars($userToView->getDateNaissance()) ?></p>
-<p><strong>Actif :</strong>
-    <?= $userToView->isActive() ? 'Oui' : 'Non' ?>
-</p>
+<p><strong>Date de naissance :</strong> <?= htmlspecialchars($userToView->getDateNaissance() ?? '-') ?></p>
 
-<?php if ($_SESSION['user']->hasRole('ADMIN') && $userToView->getId() !== $_SESSION['user']->getId()): ?>
-    <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle" style="display:inline;">
-        <input type="hidden" name="id" value="<?= $userToView->getId() ?>">
-        <button type="submit" onclick="return confirm('Voulez-vous vraiment <?= $userToView->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?');">
-            <?= $userToView->isActive() ? 'Désactiver' : 'Activer' ?>
-        </button>
-    </form>
+<?php
+$currentUser = $_SESSION['user'] ?? null;
+$isAdminOrStaff = $currentUser && $currentUser->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE']);
+?>
+
+<?php if ($isAdminOrStaff): ?>
+    <p><strong>Actif :</strong> <?= $userToView->isActive() ? 'Oui' : 'Non' ?></p>
+
+    <p><strong>Rôles :</strong>
+        <?= implode(', ', array_map(fn($r) => htmlspecialchars($r->getName()), $userToView->getRoles())) ?>
+    </p>
+
+    <?php if ($currentUser->hasRole('ADMIN') && $userToView->getId() !== $currentUser->getId()): ?>
+        <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+            <input type="hidden" name="id" value="<?= $userToView->getId() ?>">
+            <button type="submit" onclick="return confirm('Voulez-vous vraiment <?= $userToView->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?');">
+                <?= $userToView->isActive() ? 'Désactiver' : 'Activer' ?>
+            </button>
+        </form>
+    <?php endif; ?>
 <?php endif; ?>
 
-<p><strong>Rôles :</strong> <?= implode(', ', array_map(fn($r) => htmlspecialchars($r->getName()), $userToView->getRoles())) ?></p>
+<?php if ($currentUser && $currentUser->getId() === $userToView->getId()): ?>
+    <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Modifier mon profil</a>
+<?php elseif ($isAdminOrStaff): ?>
+    <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Éditer</a>
+<?php endif; ?>
 
-<a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Éditer</a> |
-<a href="<?= BASE_URL ?>index.php?page=users">Retour à la liste</a>
+<?php if ($isAdminOrStaff): ?>
+    | <a href="<?= BASE_URL ?>index.php?page=users">Retour à la liste</a>
+<?php endif; ?>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

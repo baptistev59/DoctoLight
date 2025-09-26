@@ -10,6 +10,8 @@
     <?php endif; ?>
 
     <form method="post" action="index.php?page=login">
+        <!-- Insertion du token de sécurité -->
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
         <div class="mb-3">
             <label for="email" class="form-label">Adresse email</label>
             <input type="email" name="email" id="email" class="form-control" required value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">

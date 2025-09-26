@@ -2,8 +2,6 @@
 // Chargement de la config
 $config = require __DIR__ . '/../Config/config.php';
 
-
-
 // Définition de la constante BASE_URL (si pas déjà définie)
 if (!defined('BASE_URL')) {
     define('BASE_URL', $config['base_url']);
@@ -23,6 +21,11 @@ spl_autoload_register(function ($class) {
 
 /* On ouvre la session dès l'accès au site */
 session_start();
+
+// Génération du CSRF token si pas encore défini
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -51,12 +54,13 @@ $routes = [
     // RDV
     'rdv'      => ['controller' => 'RDVController', 'method' => 'listRDV', 'role' => 'SECRETAIRE'],
 
-    // Users (admin only)
+
+    // Users
     'users'          => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],
     'users_create'   => ['controller' => 'UserController', 'method' => 'create', 'role' => 'ADMIN'],
-    'users_edit'     => ['controller' => 'UserController', 'method' => 'edit', 'role' => 'ADMIN'],
+    'users_edit'     => ['controller' => 'UserController', 'method' => 'edit'],
     'users_delete'   => ['controller' => 'UserController', 'method' => 'delete', 'role' => 'ADMIN'],
-    'users_view'     => ['controller' => 'UserController', 'method' => 'view', 'role' => 'ADMIN'],
+    'users_view'     => ['controller' => 'UserController', 'method' => 'view'],
     'users_toggle'   => ['controller' => 'UserController', 'method' => 'toggleActive', 'role' => 'ADMIN'],
 
 

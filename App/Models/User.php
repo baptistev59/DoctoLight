@@ -6,10 +6,10 @@ class User
     private string $nom;
     private string $prenom;
     private string $email;
-    private string $passwordHash; // mot de passe Hashé
+    private string $passwordHash; // mot de passe hashé
     private ?string $date_naissance;
     private bool $is_active;
-    private array $roles = [];       // tous les rôles du user
+    private array $roles = [];       // liste des rôles du user
     private ?string $highestRole;    // rôle le plus élevé
 
     public function __construct(array $data)
@@ -22,9 +22,10 @@ class User
         $this->date_naissance = $data['date_naissance'] ?? null;
         $this->is_active = (bool)$data['is_active'];
         $this->roles = $data['roles'] ?? [];
-        $this->highestRole = $data['highest_role'] ?? $this->computeHighestRole();
+        $this->highestRole = $data['highest_role'] ?? $this->findHighestRole();
     }
-    // Getters
+
+    // === Getters ===
     public function getId(): int
     {
         return $this->id;
@@ -59,17 +60,17 @@ class User
     }
     public function getHighestRole(): ?string
     {
-        return $this->computeHighestRole();
+        return $this->findHighestRole();
     }
 
-    // Roles
+    // === Roles ===
     public function setRoles(array $roles): void
     {
         $this->roles = $roles;
-        $this->highestRole = $this->computeHighestRole();
+        $this->highestRole = $this->findHighestRole();
     }
 
-    private function computeHighestRole(): ?string
+    private function findHighestRole(): ?string
     {
         if (empty($this->roles)) return null;
 
@@ -86,10 +87,13 @@ class User
 
         return null;
     }
-    public function hasRole(string $roleName): bool
+
+    public function hasRole(string|array $roleName): bool
     {
+        $rolesToCheck = is_array($roleName) ? $roleName : [$roleName];
+
         foreach ($this->roles as $role) {
-            if ($role instanceof Role && $role->getName() === $roleName) {
+            if ($role instanceof Role && in_array($role->getName(), $rolesToCheck)) {
                 return true;
             }
         }

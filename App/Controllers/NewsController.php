@@ -2,19 +2,38 @@
 class NewsController
 {
     private NewsManager $newsManager;
+    private AuthController $authController;
+    private UserManager $userManager;
+
     // include __DIR__ . '/../
     public function __construct(PDO $pdo)
     {
         $this->newsManager = new NewsManager($pdo);
+        $this->authController = new AuthController($pdo);
+        $this->userManager = new UserManager($pdo, []);
     }
 
     // Afficher toutes les news
     public function list()
     {
         $newsList = $this->newsManager->getAllNews();
+
+        // Associer chaque news avec son auteur
+        $newsWithAuthors = [];
+
+        foreach ($newsList as $news) {
+            $author = $this->userManager->findById($news->getCreatedBy());
+            $newsWithAuthors[] = [
+                'news'   => $news,
+                'author' => $author
+            ];
+        }
+
+        // rendre disponible $authController dans la vue
+        $authController = $this->authController;
+
         include __DIR__ . '/../Views/news/list.php';
     }
-
     // Afficher une seule news
     public function show()
     {
@@ -24,6 +43,8 @@ class NewsController
         }
         $id = intval($_GET['id']);
         $news = $this->newsManager->getNewsById($id);
+
+        $author = $this->userManager->findById($news->getCreatedBy());
 
         if (!$news) {
             die("Actualité non trouvée !");
@@ -46,9 +67,18 @@ class NewsController
     // Enregistrer une news
     public function createValid()
     {
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
+
+        // Utilisateur connecté
+        $currentUser = $_SESSION['user'] ?? null;
+
+        // var_dump($currentUser);
+        // die();
+
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
-        $createdBy = intval($_SESSION['user_id'] ?? 1); // Désactive le login obligatoire);
+        $createdBy = intval($currentUser->getId() ?? 1); // Désactive le login obligatoire);
 
         $news = new News([
             'titre' => $titre,
@@ -80,6 +110,9 @@ class NewsController
     // Mettre à jour une news
     public function update()
     {
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
+
         $id = intval($_GET['id']);
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
@@ -100,8 +133,11 @@ class NewsController
     // Supprimer une news
     public function delete()
     {
-        $id = $_GET['id'];
-        if ($this->newsManager->deleteNews($id)) {
+        // Vérification du CSRF token
+        $this->authController->checkCsrfToken();
+
+        $id = intval($_POST['id'] ?? 0);
+        if ($id && $this->newsManager->deleteNews($id)) {
             header("Location: index.php?page=news&success=deleted");
         } else {
             die("Erreur lors de la suppression de l'actualité.");
