@@ -1,4 +1,4 @@
-<?php include __DIR__ . '/../Views/layouts/header.php'; ?>
+<?php require_once __DIR__ . '/layouts/header.php'; ?>
 
 <h2>Bienvenue sur DoctoLight</h2>
 <p>Ceci est la page d'accueil.</p>
@@ -8,7 +8,7 @@
     <ul>
         <?php foreach ($news as $article): ?>
             <li>
-                <a href="index.php?page=news_show&id=<?= $article->getId(); ?>">
+                <a href="<?= BASE_URL ?>index.php?page=news_show&id=<?= $article->getId(); ?>">
                     <?= htmlspecialchars($article->getTitre()); ?>
                 </a>
             </li>
@@ -17,6 +17,6 @@
 <?php else: ?>
     <p>Aucune actualité pour le moment.</p>
 <?php endif; ?>
-<span><a href="index.php?page=news">Voir toutes les news</a></span>
+<span><a href="<?= BASE_URL ?>index.php?page=news">Voir toutes les news</a></span>
 
-<?php include __DIR__ . '/../Views/layouts/footer.php'; ?>
+<?php include __DIR__ . '/layouts/footer.php'; ?>

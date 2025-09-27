@@ -1,12 +1,12 @@
 <?php
-// Chargement de la config
-$config = require __DIR__ . '/../Config/config.php';
 
-// Définition de la constante BASE_URL (si pas déjà définie)
+require_once __DIR__ . '/init.php'; // init.php charge config, helpers, DB, auth
+require_once __DIR__ . '/../Config/config.php';
 if (!defined('BASE_URL')) {
     define('BASE_URL', $config['base_url']);
 }
-/* Autoload des classes PHP (models et controllers) */
+require_once __DIR__ . '/helpers.php'; // helpers globaux
+
 spl_autoload_register(function ($class) {
     $paths = [
         __DIR__ . '/../Config/',
@@ -19,14 +19,13 @@ spl_autoload_register(function ($class) {
     }
 });
 
-/* On ouvre la session dès l'accès au site */
-session_start();
+// Session et CSRF
+// session_start();
+// if (empty($_SESSION['csrf_token'])) {
+//     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+// }
 
-// Génération du CSRF token si pas encore défini
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
+// Erreurs
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -38,117 +37,112 @@ $pdo = $db->getConnection();
 // Auth
 $auth = new AuthController($pdo);
 
-// Définition des routes
+// Routes
 $routes = [
     'home' => [
-        'view'   => __DIR__ . '/../App/Views/home.php',
+        'view' => 'home',
         'public' => true,
-        'data'   => function ($pdo) {
-            $newsController = new NewsController($pdo);
-            return [
-                'news' => $newsController->getLatestNews(5)
-            ];
-        }
+        'data' => fn($pdo) => ['news' => (new NewsController($pdo))->getLatestNews(5)]
+    ],
+    // page de test
+    'test_view' => [
+        'view' => 'test',
+        'public' => true,
+        'data' => fn($pdo) => ['message' => 'Hello World!']
+    ],
+
+    // page de redirection
+    'test-redirect' => [
+        'controller' => 'AuthController',
+        'method' => 'login',
+        'public' => true
     ],
 
     // RDV
-    'rdv'      => ['controller' => 'RDVController', 'method' => 'listRDV', 'role' => 'SECRETAIRE'],
-
+    'rdv' => ['controller' => 'RDVController', 'method' => 'listRDV'],
 
     // Users
-    'users'          => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],
-    'users_create'   => ['controller' => 'UserController', 'method' => 'create', 'role' => 'ADMIN'],
-    'users_edit'     => ['controller' => 'UserController', 'method' => 'edit'],
-    'users_delete'   => ['controller' => 'UserController', 'method' => 'delete', 'role' => 'ADMIN'],
-    'users_view'     => ['controller' => 'UserController', 'method' => 'view'],
-    'users_toggle'   => ['controller' => 'UserController', 'method' => 'toggleActive', 'role' => 'ADMIN'],
+    'users' => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],
+    'users_create' => ['controller' => 'UserController', 'method' => 'create', 'role' => 'ADMIN'],
+    'users_edit' => ['controller' => 'UserController', 'method' => 'edit'],
+    'users_delete' => ['controller' => 'UserController', 'method' => 'delete', 'role' => 'ADMIN'],
+    'users_view' => ['controller' => 'UserController', 'method' => 'view'],
+    'users_toggle' => ['controller' => 'UserController', 'method' => 'toggleActive', 'role' => 'ADMIN'],
 
+    'profile' => ['controller' => 'UserController', 'method' => 'profile'],
 
     // Services
     'services' => ['controller' => 'ServiceController', 'method' => 'listServices', 'role' => 'SECRETAIRE'],
 
     // News
-    'news'              => ['controller' => 'NewsController', 'method' => 'list', 'public' => true],
-    'news_show'         => ['controller' => 'NewsController', 'method' => 'show', 'public' => true],
-    'create-news'       => ['controller' => 'NewsController', 'method' => 'create', 'role' => 'SECRETAIRE'],
+    'news' => ['controller' => 'NewsController', 'method' => 'list', 'public' => true],
+    'news_show' => ['controller' => 'NewsController', 'method' => 'show', 'public' => true],
+    'create-news' => ['controller' => 'NewsController', 'method' => 'create', 'role' => 'SECRETAIRE'],
     'create-news-valid' => ['controller' => 'NewsController', 'method' => 'createValid', 'role' => 'SECRETAIRE'],
-    'edit-news'         => ['controller' => 'NewsController', 'method' => 'editForm', 'role' => 'SECRETAIRE'],
-    'update-news'       => ['controller' => 'NewsController', 'method' => 'update', 'role' => 'SECRETAIRE'],
-    'delete-news'       => ['controller' => 'NewsController', 'method' => 'delete', 'role' => 'SECRETAIRE'],
-
+    'edit-news' => ['controller' => 'NewsController', 'method' => 'editForm', 'role' => 'SECRETAIRE'],
+    'update-news' => ['controller' => 'NewsController', 'method' => 'update', 'role' => 'SECRETAIRE'],
+    'delete-news' => ['controller' => 'NewsController', 'method' => 'delete', 'role' => 'SECRETAIRE'],
 
     // Auth
-
     'login' => ['controller' => 'AuthController', 'method' => 'login', 'public' => true],
     'logout' => ['controller' => 'AuthController', 'method' => 'logout', 'public' => true],
-
     'register' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
     'register-valid' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
 ];
 
 // Page demandée
 $page = $_GET['page'] ?? 'home';
-
-// Route inconnue -> 404
 if (!isset($routes[$page])) {
-    include __DIR__ . '/../App/Views/404.php';
+    view('404');
     exit;
 }
 
-// Gestion des routes via le tableau de routes
 $route = $routes[$page];
 
-// Vérification si accès public ou privé
+// Vérification accès
 $isPublic = $route['public'] ?? false;
 if (!$isPublic && !$auth->isLoggedIn()) {
-    header('Location: ' . BASE_URL . 'index.php?page=login');
-    exit;
+    redirect(BASE_URL . 'index.php?page=login');
 }
 
-// Vérification du rôle si nécessaire (avant d’appeler le contrôleur)
+// Vérification rôle
 if (isset($route['role'])) {
     $auth->requireRole($route['role']);
 }
 
-// Si c’est une simple vue
+// Simple vue
 if (isset($route['view'])) {
-    $data = [];
-    if (isset($route['data']) && is_callable($route['data'])) {
-        $data = $route['data']($pdo);
-    }
-    extract($data);
-    include $route['view'];
+    $data = isset($route['data']) && is_callable($route['data']) ? $route['data']($pdo) : [];
+    view($route['view'], $data);
     exit;
 }
 
-// Sinon on appelle le contrôleur dynamique
-if (isset($route['controller']) && isset($route['method'])) {
+// Contrôleur dynamique
+if (isset($route['controller'], $route['method'])) {
     $controllerName = $route['controller'];
-    $method         = $route['method'];
+    $method = $route['method'];
 
-    // Passe PDO + AuthController au constructeur
     $controller = new $controllerName($pdo, $config);
 
-    // Cas spécial pour les méthodes nécessitant un ID
+    // Méthodes nécessitant ID
     if (in_array($method, ['edit', 'delete', 'view', 'toggleActive'])) {
         $id = $_GET['id'] ?? null;
         if ($id !== null) {
             $controller->$method((int)$id);
             exit;
-        } else {
-            header("HTTP/1.0 400 Bad Request");
-            echo "ID manquant pour la méthode $method.";
-            exit;
         }
+        header("HTTP/1.0 400 Bad Request");
+        echo "ID manquant pour la méthode $method.";
+        exit;
     }
 
-    // Cas spécial listRDV -> besoin de l’ID utilisateur
+    // Cas listRDV
     if ($method === 'listRDV') {
         $controller->$method($_SESSION['user']->getId());
         exit;
     }
 
-    // Méthode standard sans paramètre
+    // Méthode standard
     $controller->$method();
     exit;
 }

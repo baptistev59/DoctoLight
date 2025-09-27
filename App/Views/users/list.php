@@ -54,7 +54,8 @@ $isAdmin = $_SESSION['user']->hasRole('ADMIN');
                     <td><?= htmlspecialchars($user->getEmail()) ?></td>
                     <td>
                         <?php if ($isAdmin && $user->getId() !== $_SESSION['user']->getId()): ?>
-                            <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle">
+                            <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle&id=<?= $user->getId() ?>">
+                                <input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
                                 <input type="hidden" name="id" value="<?= $user->getId() ?>">
                                 <input type="checkbox" name="is_active" <?= $user->isActive() ? 'checked' : '' ?>
                                     onclick="if(!confirm('Voulez-vous vraiment <?= $user->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?')) return false; this.form.submit();">

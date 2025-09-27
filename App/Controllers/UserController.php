@@ -134,8 +134,12 @@ class UserController
         include __DIR__ . '/../Views/users/create.php';
     }
 
-
-    // Édition d’un utilisateur (admin, médecin, secrétaire ou le patient lui-même)
+    /* 
+    Édition d’un utilisateur (admin, médecin, secrétaire ou le patient lui-même)
+    Admin → peut modifier tous les profils.
+    Médecin → peut modifier uniquement : les patients, sa propre fiche
+    Secrétaire → peut modifier uniquement : les patients, les médecins, sa propre fiche
+    Patient → uniquement sa propre fiche */
     public function edit(int $id): void
     {
         $userLogged = $_SESSION['user'] ?? null;
@@ -151,26 +155,40 @@ class UserController
             exit;
         }
 
-        // Vérifie si l'utilisateur connecté a le droit :
-        // - Admin, médecin ou secrétaire : peuvent éditer n'importe qui
-        // - Patient : seulement sa propre fiche
-        $allowedRoles = ['ADMIN', 'MEDECIN', 'SECRETAIRE'];
+        // Récupération des rôles
+        $rolesLogged = array_map(fn($r) => $r->getName(), $userLogged->getRoles());
+        $rolesToEdit = array_map(fn($r) => $r->getName(), $userToEdit->getRoles());
+
         $canEdit = false;
 
-        foreach ($allowedRoles as $role) {
-            if (in_array($role, $userLogged->getRoles())) {
+        // Vérification des droits
+        if (in_array('ADMIN', $rolesLogged, true)) {
+            // Admin peut tout modifier
+            $canEdit = true;
+        } elseif (in_array('MEDECIN', $rolesLogged, true)) {
+            // Médecin peut modifier les patients + sa propre fiche
+            if (in_array('PATIENT', $rolesToEdit, true) || $userLogged->getId() === $id) {
                 $canEdit = true;
-                break;
+            }
+        } elseif (in_array('SECRETAIRE', $rolesLogged, true)) {
+            // Secrétaire peut modifier patients, médecins, et sa propre fiche
+            if (in_array('PATIENT', $rolesToEdit, true) || in_array('MEDECIN', $rolesToEdit, true) || $userLogged->getId() === $id) {
+                $canEdit = true;
+            }
+        } elseif (in_array('PATIENT', $rolesLogged, true)) {
+            // Patient peut uniquement modifier sa propre fiche
+            if ($userLogged->getId() === $id) {
+                $canEdit = true;
             }
         }
 
-        if (!$canEdit && $userLogged->getId() !== $id) {
+        if (!$canEdit) {
             $_SESSION['error'] = "Vous n'avez pas les droits pour modifier ce profil.";
             header("Location: index.php?page=users");
             exit;
         }
 
-        // Vérification du CSRF token (seulement sur POST)
+        // Traitement requête POST
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->authController->checkCsrfToken();
 
@@ -182,7 +200,7 @@ class UserController
             ];
 
             // Seuls admin / secrétaire / médecin peuvent modifier "is_active" et "roles"
-            if ($canEdit) {
+            if (in_array('ADMIN', $rolesLogged, true) || in_array('SECRETAIRE', $rolesLogged, true) || in_array('MEDECIN', $rolesLogged, true)) {
                 $data['is_active'] = isset($_POST['is_active']) ? 1 : 0;
                 $data['roles']     = $_POST['roles'] ?? [];
             }
@@ -191,7 +209,7 @@ class UserController
             if (!empty($_POST['password'])) {
                 if ($_POST['password'] !== ($_POST['password_confirm'] ?? '')) {
                     $_SESSION['error'] = "Les mots de passe ne correspondent pas.";
-                    header("Location: index.php?page=users&action=edit&id=" . $id);
+                    header("Location: index.php?page=users_edit&id=" . $id);
                     exit;
                 }
                 $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
@@ -201,11 +219,19 @@ class UserController
 
             if ($updatedUser instanceof User) {
                 $_SESSION['success'] = "Profil mis à jour avec succès.";
-                // Redirection :
-                if (in_array('ADMIN', $userLogged->getRoles())) {
-                    header("Location: index.php?page=users");
+
+                // Redirections
+                if (in_array('ADMIN', $rolesLogged, true)) {
+                    // Admin modifie sa propre fiche -> profil
+                    if ($userLogged->getId() === $id) {
+                        header("Location: index.php?page=profile");
+                    } else {
+                        // Admin modifie un autre -> fiche de cet utilisateur
+                        header("Location: index.php?page=users_view&id=" . $id);
+                    }
                 } else {
-                    header("Location: index.php?page=users&action=view&id=" . $id);
+                    // Médecin, secrétaire, patient -> toujours fiche de l'utilisateur édité
+                    header("Location: index.php?page=users_view&id=" . $id);
                 }
                 exit;
             } else {
@@ -213,23 +239,21 @@ class UserController
             }
         }
 
-        // Récupérer les rôles disponibles seulement si admin/médecin/secrétaire
+        // Récupérer les rôles disponibles seulement si admin
         $roles = [];
-        if ($canEdit) {
-            $rolesData = $this->userManager->getAllRoles();
-            foreach ($rolesData as $r) {
-                $roles[] = new Role($r);
-            }
+        if (in_array('ADMIN', $rolesLogged, true)) {
+            $roles = $this->userManager->getAllRoles();
         }
 
         include __DIR__ . '/../Views/users/edit.php';
     }
 
+
     // Suppression d'un utilisateur
     public function delete(int $id): void
     {
         $this->authController->requireRole('ADMIN'); // admin only
-
+        // var_dump('UserController delete user id : ' . $id);
         // Vérification du CSRF token
         $this->authController->checkCsrfToken();
 
@@ -245,10 +269,40 @@ class UserController
         if ($deleted) {
             $_SESSION['success'] = "Utilisateur supprimé avec succès.";
         } else {
-            $_SESSION['error'] = "Erreur lors de la suppression de l'utilisateur.";
+            $_SESSION['error'] = "Impossible de supprimer cet utilisateur : il a au moins un RDV.";
         }
 
         header("Location: index.php?page=users");
         exit;
+    }
+
+    public function profile(): void
+    {
+        if (!isset($_SESSION['user'])) {
+            header('Location: ' . BASE_URL . 'index.php?page=login');
+            exit;
+        }
+        // On résupère le User connecté
+        $currentUser = $_SESSION['user'];
+
+
+        // Cas 1 : si un ID est passé en paramètre ET que l’utilisateur est admin/staff
+        $id = $_GET['id'] ?? null;
+
+        if ($id !== null && $currentUser->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE'])) {
+            $userManager = new UserManager($this->pdo, []);
+            $userToView = $userManager->findById((int)$id);
+
+            if (!$userToView) {
+                $_SESSION['error'] = "Utilisateur introuvable.";
+                header("Location: index.php?page=users");
+                exit;
+            }
+        } else {
+            // Cas 2 : pas d’ID → affiche son propre profil
+            $userToView = $currentUser;
+        }
+
+        include __DIR__ . '/../Views/users/profile.php';
     }
 }

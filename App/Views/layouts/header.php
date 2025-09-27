@@ -30,7 +30,9 @@
             <a href="<?= BASE_URL ?>index.php?page=news">Actualités</a>
 
             <?php if ($currentUser instanceof User): ?>
+                | <a href="<?= BASE_URL ?>index.php?page=profile">Profil</a>
                 | <a href="<?= BASE_URL ?>index.php?page=logout">Déconnexion</a>
+
 
                 <?php
                 // Définition des liens par rôle

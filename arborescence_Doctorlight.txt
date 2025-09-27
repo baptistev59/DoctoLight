@@ -1,6 +1,7 @@
 Structure du dossier pour le volume Data
 Le numéro de série du volume est 4E91-BD16
 D:.
+¦   .gitignore
 ¦   arborescence_Doctorlight.txt
 ¦   generer_arborescence.bat
 ¦   
@@ -19,7 +20,7 @@ D:.
 ¦   +---Models
 ¦   ¦       News.php
 ¦   ¦       NewsManager.php
-¦   ¦       Roles.php
+¦   ¦       Role.php
 ¦   ¦       User.php
 ¦   ¦       UserManager.php
 ¦   ¦       
@@ -49,11 +50,14 @@ D:.
 ¦               register.php
 ¦               
 +---Config
+¦       .env
+¦       .env.local
 ¦       config.php
 ¦       Database.php
 ¦       
 +---Public
 ¦   ¦   index.php
+¦   ¦   init.php
 ¦   ¦   
 ¦   +---css
 ¦   +---images

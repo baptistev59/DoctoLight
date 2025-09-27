@@ -210,6 +210,16 @@ class UserManager
     public function deleteUser(int $id): bool
     {
         try {
+            // Vérifier si l'utilisateur a des RDV
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) FROM rdv WHERE patient_id = :id");
+            $stmt->execute([':id' => $id]);
+            $rdvCount = (int)$stmt->fetchColumn();
+
+            if ($rdvCount > 0) {
+                // L'utilisateur a au moins un RDV, ne pas supprimer
+                error_log("L'utilisateur a au moin un rendez-vous !");
+                return false;
+            }
             $this->pdo->beginTransaction();
 
             // Supprimer d’abord les rôles
@@ -220,11 +230,15 @@ class UserManager
             $request = $this->pdo->prepare("DELETE FROM users WHERE id = :id");
             $result = $request->execute([':id' => $id]);
 
+            // var_dump('UserManager après delete execute user result : ' . $result);
+            // die;
             $this->pdo->commit();
             return $result;
         } catch (Exception $e) {
             $this->pdo->rollBack();
             error_log("Erreur suppression utilisateur : " . $e->getMessage());
+            var_dump($e->getMessage());
+            die;
             return false;
         }
     }
