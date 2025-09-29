@@ -46,7 +46,7 @@ $isSelfEdit = $currentUser && $currentUser->getId() === $userToEdit->getId();
         <label>Rôles :</label><br>
         <?php foreach ($roles as $role): ?>
             <label>
-                <input type="checkbox" name="roles[]" value="<?= $role->getId() ?>"
+                <input type="checkbox" name="roles[]" value="<?= $role->getName() ?>"
                     <?= in_array($role->getName(), array_map(fn($r) => $r->getName(), $userToEdit->getRoles())) ? 'checked' : '' ?>>
                 <?= htmlspecialchars($role->getName()) ?>
             </label><br>

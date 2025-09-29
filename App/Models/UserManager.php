@@ -60,6 +60,25 @@ class UserManager
         return new User($data);
     }
 
+    public function getUsersByRole(string $roleName): array
+    {
+        $sql = "SELECT u.* 
+            FROM users u
+            JOIN user_roles ur ON u.id = ur.user_id
+            JOIN roles r ON ur.role_id = r.id
+            WHERE r.name = :role_name
+            ORDER BY u.nom, u.prenom";
+
+        $request = $this->pdo->prepare($sql);
+        $request->execute([':role_name' => $roleName]);
+
+        $users = [];
+        while ($row = $request->fetch(PDO::FETCH_ASSOC)) {
+            $users[] = new User($row);
+        }
+        return $users;
+    }
+
     // Récupérer tous les utilisateurs
     public function findAll(): array
     {
@@ -263,8 +282,15 @@ class UserManager
             ];
 
             if (!empty($data['password'])) {
-                $query .= ", password = :password";
-                $params[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
+                // var_dump($data['password']);
+                if ($data['password'] !== ($data['password_confirm'] ?? '')) {
+                    throw new Exception("Les mots de passe ne correspondent pas.");
+                }
+                // Vérifie si ce n'est pas déjà un hash
+                if (!preg_match('/^\$2y\$/', $data['password'])) {
+                    $params[':password'] = password_hash(trim($data['password']), PASSWORD_DEFAULT);
+                    $query .= ", password = :password";
+                }
             }
 
             $query .= " WHERE id = :id";
@@ -272,24 +298,28 @@ class UserManager
             $request = $this->pdo->prepare($query);
             $request->execute($params);
 
-            // Supprimer les anciens rôles
-            $this->pdo->prepare("DELETE FROM user_roles WHERE user_id = :id")
-                ->execute([':id' => $user->getId()]);
+            // Mise à jour des rôles seulement si fourni
+            if (isset($data['roles'])) {
+                // Supprimer les anciens rôles
+                $this->pdo->prepare("DELETE FROM user_roles WHERE user_id = :id")
+                    ->execute([':id' => $user->getId()]);
 
-            // Réinsérer les nouveaux rôles
-            foreach ($data['roles'] as $roleName) {
-                $roleId = $this->getRoleIdByName($roleName);
-                if ($roleId) {
-                    $requestRole = $this->pdo->prepare("
-                    INSERT INTO user_roles (user_id, role_id)
-                    VALUES (:user_id, :role_id)
-                ");
-                    $requestRole->execute([
-                        ':user_id' => $user->getId(),
-                        ':role_id' => $roleId,
-                    ]);
+                // Réinsérer les nouveaux rôles
+                foreach ($data['roles'] as $roleName) {
+                    $roleId = $this->getRoleIdByName($roleName);
+                    if ($roleId) {
+                        $requestRole = $this->pdo->prepare("
+                INSERT INTO user_roles (user_id, role_id)
+                VALUES (:user_id, :role_id)
+            ");
+                        $requestRole->execute([
+                            ':user_id' => $user->getId(),
+                            ':role_id' => $roleId,
+                        ]);
+                    }
                 }
             }
+
 
             $this->pdo->commit();
 

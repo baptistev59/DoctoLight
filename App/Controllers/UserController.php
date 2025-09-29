@@ -212,8 +212,10 @@ class UserController
                     header("Location: index.php?page=users_edit&id=" . $id);
                     exit;
                 }
-                $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+                $data['password'] = $_POST['password'];
+                $data['password_confirm'] = $_POST['password_confirm'];
             }
+
 
             $updatedUser = $this->userManager->updateUser($userToEdit, $data);
 

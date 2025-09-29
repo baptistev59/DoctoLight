@@ -1,11 +1,14 @@
 <?php
-
 require_once __DIR__ . '/init.php'; // init.php charge config, helpers, DB, auth
-require_once __DIR__ . '/../Config/config.php';
-if (!defined('BASE_URL')) {
-    define('BASE_URL', $config['base_url']);
-}
-require_once __DIR__ . '/helpers.php'; // helpers globaux
+
+/** @var array $config */
+
+// $config = require __DIR__ . '/../Config/config.php';
+
+// if (!defined('BASE_URL')) {
+//     define('BASE_URL', $config['base_url']);
+// }
+// require_once __DIR__ . '/helpers.php'; // helpers globaux
 
 spl_autoload_register(function ($class) {
     $paths = [
@@ -42,7 +45,7 @@ $routes = [
     'home' => [
         'view' => 'home',
         'public' => true,
-        'data' => fn($pdo) => ['news' => (new NewsController($pdo))->getLatestNews(5)]
+        'data' => fn($pdo) => ['news' => (new NewsController($pdo, $config))->getLatestNews(5)]
     ],
     // page de test
     'test_view' => [
@@ -60,6 +63,9 @@ $routes = [
 
     // RDV
     'rdv' => ['controller' => 'RDVController', 'method' => 'listRDV'],
+    'create_rdv' => ['controller' => 'RDVController', 'method' => 'create'],
+    'create_rdv_valid' => ['controller' => 'RDVController', 'method' => 'createValid'],
+
 
     // Users
     'users' => ['controller' => 'UserController', 'method' => 'listUsers', 'role' => 'ADMIN'],

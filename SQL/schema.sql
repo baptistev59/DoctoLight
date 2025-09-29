@@ -1,8 +1,5 @@
 -- =====================================================
---  Schema Doctolight - MySQL
--- =====================================================
--- =====================================================
---  Création de la base de données
+--  Schema Doctolight - MySQL (Version adaptée)
 -- =====================================================
 CREATE DATABASE IF NOT EXISTS doctolight
   DEFAULT CHARACTER SET utf8mb4
@@ -52,24 +49,26 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 -- ========================
--- DISPONIBILITE STAFF
+-- DISPONIBILITE STAFF (par jour de semaine + créneau)
 -- ========================
 CREATE TABLE IF NOT EXISTS disponibilite_staff (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
-    start_time DATETIME NOT NULL,
-    end_time DATETIME NOT NULL,
+    jour_semaine ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- ========================
--- DISPONIBILITE SERVICE
+-- DISPONIBILITE SERVICE (par jour de semaine + créneau)
 -- ========================
 CREATE TABLE IF NOT EXISTS disponibilite_service (
     id INT AUTO_INCREMENT PRIMARY KEY,
     service_id INT NOT NULL,
-    start_time DATETIME NOT NULL,
-    end_time DATETIME NOT NULL,
+    jour_semaine ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE
 );
 

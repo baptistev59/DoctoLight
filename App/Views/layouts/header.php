@@ -40,7 +40,7 @@
                     'ADMIN'      => ['Administration' => BASE_URL . 'index.php?page=users'],
                     'SECRETAIRE' => ['Tableau de bord' => BASE_URL . 'index.php?page=dashboard'],
                     'MEDECIN'    => ['Tableau de bord' => BASE_URL . 'index.php?page=dashboard'],
-                    'PATIENT'    => ['Prendre RDV' => BASE_URL . 'index.php?page=rdv'],
+                    'PATIENT'    => ['Prendre RDV' => BASE_URL . 'index.php?page=create_rdv'],
                 ];
 
                 // Parcours tous les rôles de l'utilisateur connecté et affiche les liens uniques
