@@ -78,10 +78,17 @@
                     ],
                     'SECRETAIRE' => [
                         'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
-                        'Prendre RDV'     => BASE_URL . 'index.php?page=create_rdv'
+                        'Prendre RDV'     => BASE_URL . 'index.php?page=create_rdv',
+                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
                     ],
-                    'MEDECIN'    => ['Tableau de bord' => BASE_URL . 'index.php?page=dashboard'],
-                    'PATIENT'    => ['Prendre RDV' => BASE_URL . 'index.php?page=create_rdv'],
+                    'MEDECIN'    => [
+                        'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
+                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
+                    ],
+                    'PATIENT'    => [
+                        'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
+                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
+                    ],
                 ];
 
                 // Parcours tous les rôles de l'utilisateur connecté et affiche les liens uniques

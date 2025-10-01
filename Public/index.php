@@ -51,7 +51,7 @@ $routes = [
     ],
 
     // RDV
-    'rdv' => ['controller' => 'RDVController', 'method' => 'listRDV'],
+    'rdv' => ['controller' => 'RDVController', 'method' => 'planning'],
     'create_rdv' => ['controller' => 'RDVController', 'method' => 'create'],
     'create_rdv_valid' => ['controller' => 'RDVController', 'method' => 'createValid'],
     'rdv_store' => ['controller' => 'RDVController', 'method' => 'store', 'role' => ['PATIENT', 'SECRETAIRE']],

@@ -2,8 +2,54 @@
 
 <h1>Créer un rendez-vous</h1>
 
+<style>
+    .slotBtn {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        cursor: pointer;
+        min-width: 120px;
+        transition: background .15s ease, border-color .15s ease;
+    }
+
+    .slotBtn:disabled {
+        cursor: not-allowed;
+        opacity: .6;
+    }
+
+    .slot--dispo {
+        background: #9f9;
+    }
+
+    /* vert */
+    .slot--indispo {
+        background: #f99;
+    }
+
+    /* rouge */
+    .slot--selected {
+        background: #2196f3;
+        color: #fff;
+        border-color: #1976d2;
+    }
+
+    #rdvResume {
+        margin-top: 15px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        background: #f5f5f5;
+        border-radius: 6px;
+        display: none;
+    }
+
+    #rdvResume strong {
+        color: #1976d2;
+    }
+</style>
+
 <form method="post" action="index.php?page=rdv_store" id="rdvForm">
 
+    <!-- Patient -->
     <?php if (!empty($patients)): ?>
         <label for="patient_filter">Filtrer patient :</label>
         <input type="text" id="patient_filter" placeholder="Nom ou prénom">
@@ -20,6 +66,7 @@
         </select>
     <?php endif; ?>
 
+    <!-- Service -->
     <label for="service_id">Service :</label>
     <select name="service_id" id="service_id">
         <?php foreach ($services as $s): ?>
@@ -29,6 +76,7 @@
         <?php endforeach; ?>
     </select>
 
+    <!-- Médecin -->
     <label for="staff_id">Médecin :</label>
     <select name="staff_id" id="staff_id">
         <?php foreach ($staffs as $st): ?>
@@ -41,12 +89,22 @@
     <div style="margin: 10px 0;">
         <button type="button" onclick="viewPlanning()">Voir le planning complet</button>
     </div>
-    <div>
-        <button type="button" onclick="changeWeek(-1)">Semaine précédente</button>
-        <button type="button" onclick="changeWeek(1)">Semaine suivante</button>
+
+    <!-- Navigation semaine -->
+    <div style="margin: 10px 0;">
+        <button type="button" onclick="changeWeek(-1)">⏮️ Semaine précédente</button>
+        <button type="button" onclick="goCurrentWeek()">📅 Semaine en cours</button>
+        <button type="button" onclick="changeWeek(1)">Semaine suivante ⏭️</button>
     </div>
 
-    <h2>Créneaux disponibles</h2>
+    <!-- Rappel médecin + service -->
+    <h2>
+        Créneaux disponibles
+        <?php if (!empty($selectedStaffId) && !empty($selectedServiceId)): ?>
+            — <?= htmlspecialchars($staffs[array_search($selectedStaffId, array_column($staffs, 'id'))]->getDisplayName()) ?>
+            (<?= htmlspecialchars($services[array_search($selectedServiceId, array_column($services, 'id'))]->getNom()) ?>)
+        <?php endif; ?>
+    </h2>
 
     <table border="1" id="slotsTable" cellpadding="6" cellspacing="0">
         <thead>
@@ -65,14 +123,18 @@
                         $dayStr = $date->format('Y-m-d');
                         $slot = $jours[$dayStr] ?? null;
                     ?>
-                        <td style="text-align:center; min-width:120px;">
+                        <td style="text-align:center;">
                             <?php if ($slot): ?>
-                                <button type="button" class="slotBtn"
+                                <?php
+                                $isFree = !empty($slot['disponible']);
+                                $btnClasses = 'slotBtn ' . ($isFree ? 'slot--dispo' : 'slot--indispo');
+                                ?>
+                                <button type="button"
+                                    class="<?= $btnClasses ?>"
                                     data-date="<?= $slot['start']->format('Y-m-d') ?>"
-                                    data-time="<?= $slot['start']->format('H:i:s') ?>"
-                                    style="background-color: <?= $slot['disponible'] ? '#9f9' : '#f99' ?>;
-                                           padding:4px 8px; border-radius:4px;"
-                                    <?= $slot['disponible'] ? '' : 'disabled' ?>>
+                                    data-start="<?= $slot['start']->format('H:i:s') ?>"
+                                    data-end="<?= $slot['end']->format('H:i:s') ?>"
+                                    <?= $isFree ? '' : 'disabled' ?>>
                                     <?= $slot['start']->format('H:i') ?> - <?= $slot['end']->format('H:i') ?>
                                 </button>
                             <?php else: ?>
@@ -85,15 +147,59 @@
         </tbody>
     </table>
 
+    <!-- Champs cachés -->
     <input type="hidden" name="date_rdv" id="date_rdv">
     <input type="hidden" name="heure_rdv" id="heure_rdv">
+    <input type="hidden" name="heure_fin_selected" id="heure_fin_selected">
 
-    <button type="submit">Créer le RDV</button>
+    <!-- Résumé -->
+    <div id="rdvResume">
+        <p><strong>Créneau choisi :</strong> <span id="resumeText">Aucun</span></p>
+        <p><strong>Patient :</strong> <span id="resumePatient"></span></p>
+        <p><strong>Service :</strong> <span id="resumeService"></span></p>
+        <p><strong>Médecin :</strong> <span id="resumeStaff"></span></p>
+    </div>
+
+    <div style="margin-top:10px;">
+        <button type="submit" id="submitBtn">Créer le RDV</button>
+    </div>
 </form>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Filtre patient
+        const dateField = document.getElementById('date_rdv');
+        const startField = document.getElementById('heure_rdv');
+        const endField = document.getElementById('heure_fin_selected');
+
+        const resumeDiv = document.getElementById('rdvResume');
+        const resumeText = document.getElementById('resumeText');
+        const resumePatient = document.getElementById('resumePatient');
+        const resumeService = document.getElementById('resumeService');
+        const resumeStaff = document.getElementById('resumeStaff');
+
+        const slotBtns = document.querySelectorAll('.slotBtn.slot--dispo');
+        slotBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.slotBtn.slot--selected').forEach(b => b.classList.remove('slot--selected'));
+                this.classList.add('slot--selected');
+
+                dateField.value = this.dataset.date;
+                startField.value = this.dataset.start;
+                endField.value = this.dataset.end;
+
+                const patientSelect = document.getElementById('patient_id');
+                const serviceSelect = document.getElementById('service_id');
+                const staffSelect = document.getElementById('staff_id');
+
+                resumeDiv.style.display = 'block';
+                resumeText.textContent = `${this.dataset.date} de ${this.dataset.start.substring(0,5)} à ${this.dataset.end.substring(0,5)}`;
+                resumePatient.textContent = patientSelect ? patientSelect.options[patientSelect.selectedIndex].text : '';
+                resumeService.textContent = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex].text : '';
+                resumeStaff.textContent = staffSelect ? staffSelect.options[staffSelect.selectedIndex].text : '';
+            });
+        });
+
+        // filtre patient
         const filterInput = document.getElementById('patient_filter');
         const patientSelect = document.getElementById('patient_id');
         if (filterInput && patientSelect) {
@@ -105,52 +211,41 @@
                 }
             });
         }
-
-        // Sélection créneau
-        const slotBtns = document.querySelectorAll('.slotBtn');
-        slotBtns.forEach(btn => {
-            if (!btn.disabled) { // on bloque les non dispo
-                btn.addEventListener('click', function() {
-                    document.getElementById('date_rdv').value = this.dataset.date;
-                    document.getElementById('heure_rdv').value = this.dataset.time;
-
-                    slotBtns.forEach(b => b.style.border = '');
-                    this.style.border = '2px solid blue';
-                });
-            }
-        });
     });
 
-    // Navigation semaine
+    // navigation semaine
     function changeWeek(offset) {
         const url = new URL(window.location.href);
         let week = parseInt(url.searchParams.get('week') || 0);
         week += offset;
 
-        const serviceId = document.getElementById('service_id')?.value || '';
-        const staffId = document.getElementById('staff_id')?.value || '';
-        const patientId = document.getElementById('patient_id')?.value || '';
-
+        applyFilters(url);
         url.searchParams.set('week', week);
-        if (serviceId) url.searchParams.set('service_id', serviceId);
-        if (staffId) url.searchParams.set('staff_id', staffId);
-        if (patientId) url.searchParams.set('patient_id', patientId);
 
+        window.location.href = url.toString();
+    }
+
+    function goCurrentWeek() {
+        const url = new URL(window.location.href);
+        applyFilters(url);
+        url.searchParams.set('week', 0);
         window.location.href = url.toString();
     }
 
     function viewPlanning() {
         const url = new URL(window.location.href);
+        applyFilters(url);
+        url.searchParams.set('view', 'planning');
+        window.location.href = url.toString();
+    }
+
+    function applyFilters(url) {
         const serviceId = document.getElementById('service_id')?.value || '';
         const staffId = document.getElementById('staff_id')?.value || '';
         const patientId = document.getElementById('patient_id')?.value || '';
-
         if (serviceId) url.searchParams.set('service_id', serviceId);
         if (staffId) url.searchParams.set('staff_id', staffId);
         if (patientId) url.searchParams.set('patient_id', patientId);
-        url.searchParams.set('view', 'planning');
-
-        window.location.href = url.toString();
     }
 </script>
 

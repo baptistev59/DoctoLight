@@ -69,6 +69,7 @@ class RDVController
 
         $availableSlots = [];
 
+        $availableSlots = [];
         if ($selectedServiceId && $selectedStaffId) {
             // Générer tous les créneaux pour la semaine avec dispo/non dispo
             $availableSlots = $this->generateWeekSlots($selectedStaffId, $selectedServiceId, $datesSemaine);
@@ -125,7 +126,7 @@ class RDVController
         $staffDispos   = $this->dispoStaffManager->getDisponibilitesByStaff($staffId);
         $serviceDispos = $this->dispoServiceManager->getDisponibilitesByService($serviceId);
 
-        $availableSlots = $this->generateSlots($dateRdv, $duration, $staffDispos, $serviceDispos);
+        $availableSlots = $this->generateWeekSlots($dateRdv, $duration, $staffDispos, $serviceDispos);
 
         $patients = $currentUser->hasRole('SECRETAIRE')
             ? $this->userManager->getUsersByRole('PATIENT')
@@ -179,71 +180,116 @@ class RDVController
     public function store(): void
     {
         $currentUser = $_SESSION['user'];
+
         $patientId = $_POST['patient_id'] ?? $currentUser->getId();
         $serviceId = $_POST['service_id'] ?? null;
-        $staffId = $_POST['staff_id'] ?? null;
-        $dateRdv = $_POST['date_rdv'] ?? null;
-        $heureRdv = $_POST['heure_rdv'] ?? null;
+        $staffId   = $_POST['staff_id'] ?? null;
+        $dateRdv   = $_POST['date_rdv'] ?? null;
+        $heureRdv  = $_POST['heure_rdv'] ?? null;
 
-        if ($currentUser->hasRole('ADMIN')) die("Un administrateur ne peut pas prendre de rendez-vous.");
-        if (!$serviceId || !$dateRdv || !$heureRdv || !$staffId) die("Veuillez remplir tous les champs");
-
-        $datetime = new DateTime("$dateRdv $heureRdv");
-        $service = $this->serviceManager->getServiceById((int)$serviceId);
-        if (!$service) die("Service introuvable");
-
-        $duration = $service->getDuree();
-        $jourSemaine = DateHelper::getJourSemaineFR($dateRdv);
-
-        $staffDispos   = $this->dispoStaffManager->getDisponibilitesByStaffAndDay($staffId, $jourSemaine);
-        $serviceDispos = $this->dispoServiceManager->getDisponibilitesByServiceAndDay($serviceId, $jourSemaine);
-        if (!$this->isDisponible($datetime, $duration, $staffDispos, $serviceDispos)) {
-            die("Le créneau n'est pas disponible (médecin ou service indisponible)");
+        if ($currentUser->hasRole('ADMIN')) {
+            $_SESSION['error'] = "Un administrateur ne peut pas prendre de rendez-vous.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
         }
 
-        if ($this->rdvManager->findConflict($staffId, $datetime, $duration, 'staff')) die("Le médecin est déjà pris sur ce créneau");
-        if ($this->rdvManager->findConflict($patientId, $datetime, $duration, 'patient')) die("Le patient a déjà un rendez-vous sur ce créneau");
+        if (!$serviceId || !$dateRdv || !$heureRdv || !$staffId) {
+            $_SESSION['error'] = "Veuillez remplir tous les champs.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
 
-        $heureFin = (clone $datetime)->modify("+$duration minutes")->format('H:i:s');
+        $start = new DateTime("$dateRdv $heureRdv");
 
+        // Service pour récupérer la durée
+        $service = $this->serviceManager->getServiceById((int)$serviceId);
+        if (!$service) {
+            $_SESSION['error'] = "Service introuvable.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
+
+        $duration = $service->getDuree();
+        $end = (clone $start)->modify("+{$duration} minutes");
+        $jourSemaine = DateHelper::getJourSemaineFR($dateRdv);
+
+        // Vérifier dispo staff et service
+        $staffDispos   = $this->dispoStaffManager->getDisponibilitesByStaffAndDay($staffId, $jourSemaine);
+        $serviceDispos = $this->dispoServiceManager->getDisponibilitesByServiceAndDay($serviceId, $jourSemaine);
+
+        if (!$this->isDisponible($start, $duration, $staffDispos, $serviceDispos)) {
+            $_SESSION['error'] = "Le créneau n'est pas disponible (médecin ou service indisponible).";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
+
+        // Vérifier les conflits avec d'autres RDV
+        if ($this->rdvManager->findConflict($staffId, $start, $duration, 'staff')) {
+            $_SESSION['error'] = "Le médecin est déjà pris sur ce créneau.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
+
+        if ($this->rdvManager->findConflict($patientId, $start, $duration, 'patient')) {
+            $_SESSION['error'] = "Le patient a déjà un rendez-vous sur ce créneau.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
+
+        // Création du RDV
         $rdv = new Rdv([
             'patient_id'  => $patientId,
             'staff_id'    => $staffId,
             'service_id'  => $serviceId,
-            'date_rdv'    => $datetime->format('Y-m-d'),
-            'heure_debut' => $datetime->format('H:i:s'),
-            'heure_fin'   => $heureFin,
+            'date_rdv'    => $start->format('Y-m-d'),
+            'heure_debut' => $start->format('H:i:s'),
+            'heure_fin'   => $end->format('H:i:s'),
             'statut'      => 'PROGRAMME'
         ]);
 
         $this->rdvManager->createRdv($rdv);
+
+        $_SESSION['success'] = "Rendez-vous créé avec succès.";
         redirect(BASE_URL . 'index.php?page=rdv');
     }
+
 
     private function isDisponible(DateTime $start, int $duration, array $staffDispos, array $serviceDispos): bool
     {
         $end = clone $start;
         $end->modify("+{$duration} minutes");
 
-        // Vérification dispo staff
+        $jour = $start->format('Y-m-d'); // vrai jour de la semaine testée
+
         $staffOk = false;
         foreach ($staffDispos as $dispo) {
-            $dispoStart = new DateTime($dispo->getStartTime());
-            $dispoEnd   = new DateTime($dispo->getEndTime());
+            $dispoStart = (clone $start)->setTime(
+                (int)$dispo->getStartTime()->format('H'),
+                (int)$dispo->getStartTime()->format('i')
+            );
+            $dispoEnd = (clone $start)->setTime(
+                (int)$dispo->getEndTime()->format('H'),
+                (int)$dispo->getEndTime()->format('i')
+            );
+
+            error_log("  [Staff dispo ajusté] {$dispoStart->format('Y-m-d H:i')} -> {$dispoEnd->format('H:i')}");
+
             if ($start >= $dispoStart && $end <= $dispoEnd) {
                 $staffOk = true;
                 break;
             }
         }
 
-        if (!$staffOk) return false; // inutile de continuer si le médecin n’est pas dispo
+        if (!$staffOk) return false;
 
-        // Vérification dispo service
         foreach ($serviceDispos as $dispo) {
-            $dispoStart = new DateTime($dispo->getStartTime());
-            $dispoEnd   = new DateTime($dispo->getEndTime());
+            $dispoStart = (clone $start)->setTime(
+                (int)$dispo->getStartTime()->format('H'),
+                (int)$dispo->getStartTime()->format('i')
+            );
+            $dispoEnd = (clone $start)->setTime(
+                (int)$dispo->getEndTime()->format('H'),
+                (int)$dispo->getEndTime()->format('i')
+            );
+
+            error_log("  [Service dispo ajusté] {$dispoStart->format('Y-m-d H:i')} -> {$dispoEnd->format('H:i')}");
+
             if ($start >= $dispoStart && $end <= $dispoEnd) {
-                return true; // OK si dispo service ET médecin
+                return true;
             }
         }
 
@@ -251,75 +297,6 @@ class RDVController
     }
 
 
-    // private function generateWeekSlots(int $staffId, int $serviceId, array $datesSemaine): array
-    // {
-    //     $service = $this->serviceManager->getServiceById($serviceId);
-    //     $duration = $service->getDuree(); // durée du service
-
-    //     $allSlots = []; // $allSlots[heure][jour] = ['start'=>, 'end'=>, 'disponible'=>]
-
-    //     foreach ($datesSemaine as $date) {
-    //         $jourSemaine = DateHelper::getJourSemaineFR($date->format('Y-m-d'));
-
-    //         // Récupérer les dispos du staff et du service
-    //         $staffDispos   = $this->dispoStaffManager->getDisponibilitesByStaffAndDay($staffId, $jourSemaine);
-    //         $serviceDispos = $this->dispoServiceManager->getDisponibilitesByServiceAndDay($serviceId, $jourSemaine);
-
-    //         foreach ($serviceDispos as $sDispo) {
-    //             // On crée un DateTime pour le jour + heure de début/fin du service
-    //             $start = (clone $date)->setTime(
-    //                 (int)$sDispo->getStartTime()->format('H'),
-    //                 (int)$sDispo->getStartTime()->format('i')
-    //             );
-    //             $end   = (clone $date)->setTime(
-    //                 (int)$sDispo->getEndTime()->format('H'),
-    //                 (int)$sDispo->getEndTime()->format('i')
-    //             );
-
-    //             $current = clone $start;
-
-    //             while ($current < $end) {
-    //                 $slotEnd = (clone $current)->modify("+$duration minutes");
-
-    //                 // Vérifier intersection avec dispo staff
-    //                 $isStaffOk = false;
-    //                 foreach ($staffDispos as $stDispo) {
-    //                     $stStart = (clone $date)->setTime(
-    //                         (int)$stDispo->getStartTime()->format('H'),
-    //                         (int)$stDispo->getStartTime()->format('i')
-    //                     );
-    //                     $stEnd = (clone $date)->setTime(
-    //                         (int)$stDispo->getEndTime()->format('H'),
-    //                         (int)$stDispo->getEndTime()->format('i')
-    //                     );
-
-    //                     if ($current >= $stStart && $slotEnd <= $stEnd) {
-    //                         $isStaffOk = true;
-    //                         break;
-    //                     }
-    //                 }
-
-    //                 // Vérifier conflits RDV existants
-    //                 $hasConflict = $this->rdvManager->findConflict($staffId, $current, $duration, 'staff');
-
-    //                 $available = $isStaffOk && !$hasConflict;
-
-    //                 $heureKey = $current->format('H:i');
-
-    //                 $allSlots[$heureKey][$date->format('Y-m-d')] = [
-    //                     'start'      => clone $current,
-    //                     'end'        => $slotEnd,
-    //                     'disponible' => $available
-    //                 ];
-
-    //                 $current->modify("+$duration minutes");
-    //             }
-    //         }
-    //     }
-
-    //     ksort($allSlots); // trier par heure
-    //     return $allSlots;
-    // }
 
     // pour test de construction de la semaine et le renvoie du résultat de generateWeekSlots
     public function debugWeekSlots(int $staffId, int $serviceId, int $weekOffset = 0): array
@@ -416,5 +393,71 @@ class RDVController
 
         ksort($allSlots);
         return $allSlots;
+    }
+
+    public function planning(): void
+    {
+        // --- Filtres (optionnels) ---
+        $selectedStaffId   = isset($_GET['staff_id'])   && $_GET['staff_id']   !== '' ? (int)$_GET['staff_id']   : null;
+        $selectedServiceId = isset($_GET['service_id']) && $_GET['service_id'] !== '' ? (int)$_GET['service_id'] : null;
+        $selectedPatientId = isset($_GET['patient_id']) && $_GET['patient_id'] !== '' ? (int)$_GET['patient_id'] : null;
+        $weekOffset        = (int)($_GET['week'] ?? 0);
+
+        // --- Semaine courante (lundi -> dimanche) ---
+        $startOfWeek = new DateTimeImmutable("monday this week +{$weekOffset} week");
+        $endOfWeek   = $startOfWeek->modify('+6 days');
+        $datesSemaine = [];
+        for ($i = 0; $i < 7; $i++) {
+            $datesSemaine[] = $startOfWeek->modify("+{$i} days");
+        }
+
+        // --- Données pour les listes ---
+        $services = $this->serviceManager->getAllServices();
+        $staffs   = $this->userManager->getUsersByRole('MEDECIN');
+        $patients = $this->userManager->getUsersByRole('PATIENT');
+
+        // --- RDV de la semaine (détaillés) ---
+        $events = $this->rdvManager->getRdvForWeekDetailed($startOfWeek, $endOfWeek, $selectedStaffId, $selectedServiceId, $selectedPatientId);
+
+        // --- Grille heures x jours (pas = 30 min 08:00 → 18:00) ---
+        $stepMinutes = 30;
+        $dayStart = new DateTimeImmutable($startOfWeek->format('Y-m-d') . ' 08:00:00');
+        $dayEnd   = new DateTimeImmutable($startOfWeek->format('Y-m-d') . ' 18:00:00');
+
+        $creneaux = []; // $creneaux['HH:MM']['YYYY-mm-dd'] = [events...]
+        // Initialise toutes les cases à vide
+        $times = [];
+        $cursor = $dayStart;
+        while ($cursor < $dayEnd) {
+            $times[] = $cursor->format('H:i');
+            $cursor = $cursor->modify("+{$stepMinutes} minutes");
+        }
+        foreach ($times as $h) {
+            foreach ($datesSemaine as $d) {
+                $creneaux[$h][$d->format('Y-m-d')] = [];
+            }
+        }
+
+        // Place les RDV dans les cases correspondant à leur heure de début
+        foreach ($events as $e) {
+            // $e['date_rdv'] au format Y-m-d, $e['heure_debut'] TIME
+            $hKey = substr($e['heure_debut'], 0, 5); // 'HH:MM'
+            if (isset($creneaux[$hKey][$e['date_rdv']])) {
+                $creneaux[$hKey][$e['date_rdv']][] = $e;
+            }
+        }
+
+        // Envoi à la vue
+        view('rdv/list', [
+            'datesSemaine'      => $datesSemaine,
+            'creneaux'          => $creneaux,
+            'weekOffset'        => $weekOffset,
+            'services'          => $services,
+            'staffs'            => $staffs,
+            'patients'          => $patients,
+            'selectedServiceId' => $selectedServiceId,
+            'selectedStaffId'   => $selectedStaffId,
+            'selectedPatientId' => $selectedPatientId
+        ]);
     }
 }

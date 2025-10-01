@@ -140,32 +140,49 @@ class RdvManager
     }
 
     // Recherche les confilts
-    public function findConflict(int $id, \DateTimeInterface $start, int $duration, string $type): bool
+    public function findConflict(int $entityId, DateTimeInterface $start, int $duration, string $type = 'staff'): bool
     {
-        // Calcule heure de fin
-        $endTs = $start->getTimestamp() + ($duration * 60);
-        $end   = (new \DateTimeImmutable('@' . $endTs))->setTimezone($start->getTimezone());
+        if ($start instanceof DateTimeImmutable) {
+            $start = new DateTime($start->format('Y-m-d H:i:s'));
+        }
 
-        // Identifier la colonne (staff ou patient)
-        $col = $type === 'staff' ? 'staff_id' : 'patient_id';
+        $end = (clone $start)->modify("+{$duration} minutes");
 
-        $sql = "SELECT COUNT(*) FROM rdv
-            WHERE $col = :id
-              AND date_rdv = :date_rdv
-              AND (
-                  (heure_debut < :end AND heure_fin > :start)
-              )";
+        if ($type === 'staff') {
+            // Vérifie si le médecin a déjà un RDV sur ce créneau (tous services confondus)
+            $sql = "SELECT COUNT(*) FROM rdv 
+                WHERE staff_id = :id
+                AND (
+                    (date_rdv = :date_rdv)
+                    AND (
+                        (heure_debut < :end AND heure_fin > :start)
+                    )
+                )";
+        } elseif ($type === 'patient') {
+            // Vérifie si le patient a déjà un RDV sur ce créneau
+            $sql = "SELECT COUNT(*) FROM rdv 
+                WHERE patient_id = :id
+                AND (
+                    (date_rdv = :date_rdv)
+                    AND (
+                        (heure_debut < :end AND heure_fin > :start)
+                    )
+                )";
+        } else {
+            throw new InvalidArgumentException("Type $type invalide pour findConflict()");
+        }
 
-        $request = $this->pdo->prepare($sql);
-        $request->execute([
-            ':id'       => $id,
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            ':id'       => $entityId,
             ':date_rdv' => $start->format('Y-m-d'),
             ':start'    => $start->format('H:i:s'),
             ':end'      => $end->format('H:i:s'),
         ]);
 
-        return (bool)$request->fetchColumn();
+        return $stmt->fetchColumn() > 0;
     }
+
 
     public function generateAvailableSlots(
         string $date,
@@ -211,5 +228,49 @@ class RdvManager
         }
 
         return $slots;
+    }
+
+
+    // RDV de la semaine avec détails (noms patient / staff / service).
+    public function getRdvForWeekDetailed(DateTimeInterface $start, DateTimeInterface $end, ?int $staffId, ?int $serviceId, ?int $patientId): array
+    {
+        $sql = "SELECT
+                r.id, r.patient_id, r.staff_id, r.service_id,
+                r.date_rdv, r.heure_debut, r.heure_fin, r.statut,
+                up.nom  AS patient_nom,
+                up.prenom AS patient_prenom,
+                us.nom  AS staff_nom,
+                us.prenom AS staff_prenom,
+                s.nom   AS service_nom
+            FROM rdv r
+            JOIN users up ON up.id = r.patient_id
+            JOIN users us ON us.id = r.staff_id
+            JOIN services s ON s.id = r.service_id
+            WHERE r.date_rdv BETWEEN :d1 AND :d2";
+
+        $params = [
+            ':d1' => $start->format('Y-m-d'),
+            ':d2' => $end->format('Y-m-d'),
+        ];
+
+        if ($staffId !== null) {
+            $sql .= " AND r.staff_id = :staff_id";
+            $params[':staff_id'] = $staffId;
+        }
+        if ($serviceId !== null) {
+            $sql .= " AND r.service_id = :service_id";
+            $params[':service_id'] = $serviceId;
+        }
+        if ($patientId !== null) {
+            $sql .= " AND r.patient_id = :patient_id";
+            $params[':patient_id'] = $patientId;
+        }
+
+        $sql .= " ORDER BY r.date_rdv ASC, r.heure_debut ASC";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }
