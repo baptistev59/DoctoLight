@@ -97,25 +97,26 @@ class DisponibiliteServiceManager
         return $dispos;
     }
 
-    public function getDisponibilitesByServiceAndDay(int $serviceId, string $jour): array
+    public function getDisponibilitesByServiceAndDay(int $serviceId, string $jourSemaine): array
     {
         $sql = "SELECT * FROM disponibilite_service 
-            WHERE service_id = :serviceId AND jour_semaine = :jour
+            WHERE service_id = :serviceId AND jour_semaine = :jourSemaine
             ORDER BY start_time ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
             ':serviceId' => $serviceId,
-            ':jour'      => $jour
+            ':jourSemaine' => $jourSemaine
         ]);
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // var_dump($rows);
         $dispos = [];
         foreach ($rows as $row) {
             $dispos[] = new DisponibiliteService(
                 $row['id'],
                 $row['service_id'],
-                $row['start_time'],
-                $row['end_time'],
+                new DateTime($row['start_time']),
+                new DateTime($row['end_time']),
                 $row['jour_semaine']
             );
         }

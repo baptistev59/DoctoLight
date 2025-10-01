@@ -3,12 +3,6 @@ require_once __DIR__ . '/init.php'; // init.php charge config, helpers, DB, auth
 
 /** @var array $config */
 
-// $config = require __DIR__ . '/../Config/config.php';
-
-// if (!defined('BASE_URL')) {
-//     define('BASE_URL', $config['base_url']);
-// }
-// require_once __DIR__ . '/helpers.php'; // helpers globaux
 
 spl_autoload_register(function ($class) {
     $paths = [
@@ -22,11 +16,6 @@ spl_autoload_register(function ($class) {
     }
 });
 
-// Session et CSRF
-// session_start();
-// if (empty($_SESSION['csrf_token'])) {
-//     $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-// }
 
 // Erreurs
 ini_set('display_errors', 1);
@@ -65,6 +54,7 @@ $routes = [
     'rdv' => ['controller' => 'RDVController', 'method' => 'listRDV'],
     'create_rdv' => ['controller' => 'RDVController', 'method' => 'create'],
     'create_rdv_valid' => ['controller' => 'RDVController', 'method' => 'createValid'],
+    'rdv_store' => ['controller' => 'RDVController', 'method' => 'store', 'role' => ['PATIENT', 'SECRETAIRE']],
 
 
     // Users

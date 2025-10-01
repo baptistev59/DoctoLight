@@ -67,14 +67,15 @@ class NewsController
     // Enregistrer une news
     public function createValid()
     {
+        // var_dump($_POST);
+        // die();
         // Vérification du CSRF token
         $this->authController->checkCsrfToken();
 
         // Utilisateur connecté
         $currentUser = $_SESSION['user'] ?? null;
 
-        // var_dump($currentUser);
-        // die();
+
 
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);

@@ -1,7 +1,8 @@
 -- =====================================================
---  Schema Doctolight - MySQL (Version adaptée)
+--  Schema Doctolight - MySQL (Version finale adaptée)
 -- =====================================================
-CREATE DATABASE IF NOT EXISTS doctolight
+DROP DATABASE IF EXISTS doctolight;
+CREATE DATABASE doctolight
   DEFAULT CHARACTER SET utf8mb4
   DEFAULT COLLATE utf8mb4_general_ci;
 
@@ -10,7 +11,7 @@ USE doctolight;
 -- ========================
 -- USERS
 -- ========================
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(100) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
@@ -18,13 +19,13 @@ CREATE TABLE IF NOT EXISTS users (
     password VARCHAR(255) NOT NULL,
     date_naissance DATE NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT  CURRENT_TIMESTAMP
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================
 -- ROLES
 -- ========================
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE roles (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name ENUM('PATIENT', 'SECRETAIRE', 'MEDECIN', 'ADMIN') NOT NULL UNIQUE
 );
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS roles (
 -- ========================
 -- USER_ROLE (table de jointure)
 -- ========================
-CREATE TABLE IF NOT EXISTS user_roles (
+CREATE TABLE user_roles (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
     PRIMARY KEY (user_id, role_id),
@@ -43,15 +44,16 @@ CREATE TABLE IF NOT EXISTS user_roles (
 -- ========================
 -- SERVICES
 -- ========================
-CREATE TABLE IF NOT EXISTS services (
+CREATE TABLE services (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nom VARCHAR(150) NOT NULL
+    nom VARCHAR(150) NOT NULL,
+    duree INT NOT NULL DEFAULT 30 -- durée standard d’un RDV dans ce service
 );
 
 -- ========================
--- DISPONIBILITE STAFF (par jour de semaine + créneau)
+-- DISPONIBILITE STAFF
 -- ========================
-CREATE TABLE IF NOT EXISTS disponibilite_staff (
+CREATE TABLE disponibilite_staff (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     jour_semaine ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') NOT NULL,
@@ -61,9 +63,9 @@ CREATE TABLE IF NOT EXISTS disponibilite_staff (
 );
 
 -- ========================
--- DISPONIBILITE SERVICE (par jour de semaine + créneau)
+-- DISPONIBILITE SERVICE
 -- ========================
-CREATE TABLE IF NOT EXISTS disponibilite_service (
+CREATE TABLE disponibilite_service (
     id INT AUTO_INCREMENT PRIMARY KEY,
     service_id INT NOT NULL,
     jour_semaine ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') NOT NULL,
@@ -75,30 +77,34 @@ CREATE TABLE IF NOT EXISTS disponibilite_service (
 -- ========================
 -- RDV
 -- ========================
-CREATE TABLE IF NOT EXISTS rdv (
+CREATE TABLE rdv (
     id INT AUTO_INCREMENT PRIMARY KEY,
     patient_id INT NOT NULL,
     staff_id INT NOT NULL,
     service_id INT NOT NULL,
     dispo_staff_id INT NULL,
     dispo_service_id INT NULL,
-    date_rdv TIMESTAMP NOT NULL,
+
+    date_rdv DATE NOT NULL,
+    heure_debut TIME NOT NULL,
+    heure_fin TIME NOT NULL,
+    duree INT NOT NULL DEFAULT 30,
     statut ENUM('PROGRAMME', 'ANNULE', 'TERMINE') NOT NULL DEFAULT 'PROGRAMME',
 
-    FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE RESTRICT,
-    FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE RESTRICT,
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT,
-    FOREIGN KEY (dispo_staff_id) REFERENCES disponibilite_staff(id) ON DELETE RESTRICT,
-    FOREIGN KEY (dispo_service_id) REFERENCES disponibilite_service(id) ON DELETE RESTRICT,
+    FOREIGN KEY (patient_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
+    FOREIGN KEY (dispo_staff_id) REFERENCES disponibilite_staff(id) ON DELETE SET NULL,
+    FOREIGN KEY (dispo_service_id) REFERENCES disponibilite_service(id) ON DELETE SET NULL,
 
-    CONSTRAINT unique_patient_rdv UNIQUE (patient_id, date_rdv),
-    CONSTRAINT unique_staff_rdv   UNIQUE (staff_id, date_rdv)
+    CONSTRAINT unique_patient_rdv UNIQUE (patient_id, date_rdv, heure_debut),
+    CONSTRAINT unique_staff_rdv   UNIQUE (staff_id, date_rdv, heure_debut)
 );
 
 -- ========================
 -- NEWS
 -- ========================
-CREATE TABLE IF NOT EXISTS news (
+CREATE TABLE news (
     id INT AUTO_INCREMENT PRIMARY KEY,
     titre VARCHAR(200) NOT NULL,
     contenu TEXT NOT NULL,
@@ -110,7 +116,7 @@ CREATE TABLE IF NOT EXISTS news (
 -- ========================
 -- AUDIT LOG
 -- ========================
-CREATE TABLE IF NOT EXISTS audit_log (
+CREATE TABLE audit_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     table_name VARCHAR(100) NOT NULL,
     entity_id INT NOT NULL,
@@ -126,6 +132,7 @@ CREATE TABLE IF NOT EXISTS audit_log (
 -- ========================
 CREATE INDEX idx_rdv_date ON rdv(date_rdv);
 CREATE INDEX idx_rdv_patient_date ON rdv(patient_id, date_rdv);
+CREATE INDEX idx_rdv_staff_date ON rdv(staff_id, date_rdv, heure_debut, heure_fin);
 CREATE INDEX idx_audit_table_date ON audit_log(table_name, action_date);
 
 -- =====================================================

@@ -1,7 +1,7 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
 <h2><?= htmlspecialchars($news->getTitre()); ?></h2>
-<p><?= nl2br(htmlspecialchars($news->getContenu())); ?></p>
+<?= nl2br($news->getContenu()); ?>
 <p><small>Créé par : <?php if ($author): ?>
             <?= htmlspecialchars($author->getNom()) . " " . htmlspecialchars($author->getPrenom()); ?>
         <?php else: ?>

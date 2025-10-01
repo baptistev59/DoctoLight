@@ -1,4 +1,3 @@
-
 <?php
 // fonctions utilitaires globales
 
@@ -44,7 +43,7 @@ function isLoggedIn(): bool
 
 /**
  * Vérifie si l’utilisateur a un rôle donné
- * Exemple : hasRole('admin')
+ * Exemple : hasRole('ADMIN')
  */
 function hasRole(string $role): bool
 {
@@ -52,9 +51,22 @@ function hasRole(string $role): bool
 }
 
 /**
- * Test de redirection
+ * Classe utilitaire pour manipuler les jours de la semaine
  */
-if (!defined('BASE_URL')) {
-    define('BASE_URL', $config['base_url']);
+class DateHelper
+{
+    public static function getJourSemaineFR(string $date): string
+    {
+        $map = [
+            'MONDAY'    => 'LUNDI',
+            'TUESDAY'   => 'MARDI',
+            'WEDNESDAY' => 'MERCREDI',
+            'THURSDAY'  => 'JEUDI',
+            'FRIDAY'    => 'VENDREDI',
+            'SATURDAY'  => 'SAMEDI',
+            'SUNDAY'    => 'DIMANCHE'
+        ];
+
+        return $map[strtoupper((new DateTime($date))->format('l'))];
+    }
 }
-require_once __DIR__ . '/helpers.php';

@@ -6,11 +6,12 @@ class User
     private string $nom;
     private string $prenom;
     private string $email;
-    private string $passwordHash; // mot de passe hashé
+    private string $passwordHash;
     private ?string $date_naissance;
     private bool $is_active;
-    private array $roles = [];       // liste des rôles du user
-    private ?string $highestRole;    // rôle le plus élevé
+    private array $roles = [];
+    private ?string $highestRole;
+    private ?string $displayName = null; // propriété pour le displayName
 
     public function __construct(array $data)
     {
@@ -23,6 +24,7 @@ class User
         $this->is_active = (bool)$data['is_active'];
         $this->roles = $data['roles'] ?? [];
         $this->highestRole = $data['highest_role'] ?? $this->findHighestRole();
+        $this->displayName = $data['display_name'] ?? null;
     }
 
     // === Getters ===
@@ -98,5 +100,18 @@ class User
             }
         }
         return false;
+    }
+
+    public function getDisplayName(): string
+    {
+        if ($this->displayName !== null) {
+            return $this->displayName;
+        }
+        return $this->nom . ' ' . $this->prenom;
+    }
+
+    public function setDisplayName(string $name): void
+    {
+        $this->displayName = $name;
     }
 }

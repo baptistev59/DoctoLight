@@ -100,7 +100,7 @@ class AuthController
     }
 
     // Exiger un rôle minimum (selon la hiérarchie)
-    public function requireRole(string $role): void
+    public function requireRole(string|array $roles): void
     {
         if (!$this->isLoggedIn()) {
             header("HTTP/1.1 403 Forbidden");
@@ -109,14 +109,26 @@ class AuthController
         }
 
         $hierarchy = $this->config['role_hierarchy'];
-        $userRole = $_SESSION['user']->getHighestRole();
+        $userRole  = $_SESSION['user']->getHighestRole();
 
-        if (!$userRole || array_search($userRole, $hierarchy) > array_search($role, $hierarchy)) {
+        // Si $roles est une string, on la transforme en tableau
+        $roles = (array) $roles;
+
+        $allowed = false;
+        foreach ($roles as $role) {
+            if ($userRole && array_search($userRole, $hierarchy) <= array_search($role, $hierarchy)) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        if (!$allowed) {
             header("HTTP/1.1 403 Forbidden");
             include __DIR__ . '/../Views/403.php';
             exit;
         }
     }
+
 
     // Inscription d'un patient
     public function register(): void

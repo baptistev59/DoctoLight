@@ -12,10 +12,10 @@ class DisponibiliteStaffManager
     // Créer une disponibilité staff
     public function createDisponibilite(DisponibiliteStaff $dispo): bool
     {
-        $sql = "INSERT INTO disponibilite_staff (staff_id, start_time, end_time, jour_semaine)
-                VALUES (:staff_id, :start_time, :end_time,:jour_semaine)";
+        $sql = "INSERT INTO disponibilite_staff (user_id, start_time, end_time, jour_semaine)
+                VALUES (:user_id, :start_time, :end_time,:jour_semaine)";
         $params = [
-            ':staff_id'   => $dispo->getStaffId(),
+            ':user_id'   => $dispo->getStaffId(),
             ':start_time' => $dispo->getStartTime()->format('Y-m-d H:i:s'),
             ':end_time'   => $dispo->getEndTime()->format('Y-m-d H:i:s'),
             ':jour_semaine' => $dispo->getJourSemaine()
@@ -28,10 +28,10 @@ class DisponibiliteStaffManager
     public function updateDisponibilite(DisponibiliteStaff $dispo): bool
     {
         $sql = "UPDATE disponibilite_staff 
-                SET staff_id = :staff_id, start_time = :start_time, end_time = :end_time,jour_semaine = :jour_semaine
+                SET user_id = :user_id, start_time = :start_time, end_time = :end_time,jour_semaine = :jour_semaine
                 WHERE id = :id";
         $params = [
-            ':staff_id'   => $dispo->getStaffId(),
+            ':user_id'   => $dispo->getStaffId(),
             ':start_time' => $dispo->getStartTime(),
             ':end_time'   => $dispo->getEndTime(),
             ':id'         => $dispo->getId(),
@@ -58,7 +58,7 @@ class DisponibiliteStaffManager
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            return new DisponibiliteStaff($row['id'], $row['staff_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
+            return new DisponibiliteStaff($row['id'], $row['user_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
         }
         return null;
     }
@@ -71,7 +71,7 @@ class DisponibiliteStaffManager
         $dispos = [];
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $dispos[] = new DisponibiliteStaff($row['id'], $row['staff_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
+            $dispos[] = new DisponibiliteStaff($row['id'], $row['user_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
         }
 
         return $dispos;
@@ -79,16 +79,16 @@ class DisponibiliteStaffManager
 
     public function getDisponibilitesByStaff(int $staffId): array
     {
-        $sql = "SELECT * FROM disponibilite_staff WHERE staff_id = :staff_id ORDER BY start_time ASC";
+        $sql = "SELECT * FROM disponibilite_staff WHERE user_id = :user_id ORDER BY start_time ASC";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':staff_id' => $staffId]);
+        $stmt->execute([':user_id' => $staffId]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $dispos = [];
         foreach ($rows as $row) {
             $dispos[] = new DisponibiliteStaff(
                 $row['id'],
-                $row['staff_id'],
+                $row['user_id'],
                 new DateTime($row['start_time']),
                 new DateTime($row['end_time']),
                 $row['jour_semaine']
@@ -100,7 +100,7 @@ class DisponibiliteStaffManager
     public function getDisponibilitesByStaffAndDay(int $staffId, string $jour): array
     {
         $sql = "SELECT * FROM disponibilite_staff 
-            WHERE staff_id = :staffId AND jour_semaine = :jour
+            WHERE user_id = :staffId AND jour_semaine = :jour
             ORDER BY start_time ASC";
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([
@@ -109,13 +109,14 @@ class DisponibiliteStaffManager
         ]);
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        // var_dump($rows);
         $dispos = [];
         foreach ($rows as $row) {
             $dispos[] = new DisponibiliteStaff(
                 $row['id'],
-                $row['staff_id'],
-                $row['start_time'],
-                $row['end_time'],
+                $row['user_id'],
+                new DateTime($row['start_time']),
+                new DateTime($row['end_time']),
                 $row['jour_semaine']
             );
         }

@@ -6,7 +6,8 @@
     <p style="color: red;">Le titre et le contenu doivent contenir au moins 3 caractères.</p>
 <?php endif; ?>
 
-<form action="index.php?page=create-news-valid" method="post">
+
+<form id="newsForm" action="index.php?page=create-news-valid" method="post">
     <div>
         <!-- Insertion du token de sécurité -->
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
@@ -22,5 +23,12 @@
 
     <button type="submit">Créer la news</button>
 </form>
+<script>
+    // Avant l'envoi du formulaire, TinyMCE réinjecte le contenu dans le <textarea>
+    document.getElementById("newsForm").addEventListener("submit", function(e) {
+        tinymce.triggerSave();
+    });
+</script>
+
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

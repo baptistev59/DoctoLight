@@ -18,9 +18,17 @@ D:.
 ¦   ¦       UserController.php
 ¦   ¦       
 ¦   +---Models
+¦   ¦       DisponibiliteService.php
+¦   ¦       DisponibiliteServiceManager.php
+¦   ¦       DisponibiliteStaff.php
+¦   ¦       DisponibiliteStaffManager.php
 ¦   ¦       News.php
 ¦   ¦       NewsManager.php
+¦   ¦       Rdv.php
+¦   ¦       RdvManager.php
 ¦   ¦       Role.php
+¦   ¦       Service.php
+¦   ¦       ServiceManager.php
 ¦   ¦       User.php
 ¦   ¦       UserManager.php
 ¦   ¦       
@@ -28,6 +36,7 @@ D:.
 ¦       ¦   403.php
 ¦       ¦   404.php
 ¦       ¦   home.php
+¦       ¦   test.php
 ¦       ¦   
 ¦       +---layouts
 ¦       ¦       footer.php
@@ -40,6 +49,10 @@ D:.
 ¦       ¦       shows.php
 ¦       ¦       
 ¦       +---rdv
+¦       ¦       create.php
+¦       ¦       list.php
+¦       ¦       testcalendrierRDV.php
+¦       ¦       
 ¦       +---services
 ¦       +---users
 ¦               create.php
@@ -56,14 +69,18 @@ D:.
 ¦       Database.php
 ¦       
 +---Public
+¦   ¦   helpers.php
 ¦   ¦   index.php
 ¦   ¦   init.php
+¦   ¦   test_conflict.php
 ¦   ¦   
 ¦   +---css
 ¦   +---images
 +---SQL
-¦       datas.sql
+¦       generate_seed.bat
 ¦       schema.sql
+¦       seed.php
+¦       seed.sql
 ¦       
 +---UML
         class.puml

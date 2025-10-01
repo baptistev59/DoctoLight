@@ -140,26 +140,76 @@ class RdvManager
     }
 
     // Recherche les confilts
-    public function findConflict(int $userId, \DateTime $start, int $duration, string $type = 'staff'): ?Rdv
+    public function findConflict(int $id, \DateTimeInterface $start, int $duration, string $type): bool
     {
-        $end = (clone $start)->modify("+$duration minutes")->format('Y-m-d H:i:s');
-        $field = $type === 'staff' ? 'staff_id' : 'patient_id';
+        // Calcule heure de fin
+        $endTs = $start->getTimestamp() + ($duration * 60);
+        $end   = (new \DateTimeImmutable('@' . $endTs))->setTimezone($start->getTimezone());
 
-        $sql = "SELECT * FROM rdv
-            WHERE $field = :user_id
-              AND statut = 'PROGRAMME'
-              AND date_rdv < :end
-              AND DATE_ADD(date_rdv, INTERVAL duree MINUTE) > :start
-            LIMIT 1";
+        // Identifier la colonne (staff ou patient)
+        $col = $type === 'staff' ? 'staff_id' : 'patient_id';
+
+        $sql = "SELECT COUNT(*) FROM rdv
+            WHERE $col = :id
+              AND date_rdv = :date_rdv
+              AND (
+                  (heure_debut < :end AND heure_fin > :start)
+              )";
 
         $request = $this->pdo->prepare($sql);
         $request->execute([
-            ':user_id' => $userId,
-            ':start' => $start->format('Y-m-d H:i:s'),
-            ':end' => $end
+            ':id'       => $id,
+            ':date_rdv' => $start->format('Y-m-d'),
+            ':start'    => $start->format('H:i:s'),
+            ':end'      => $end->format('H:i:s'),
         ]);
 
-        $row = $request->fetch(PDO::FETCH_ASSOC);
-        return $row ? new Rdv($row) : null;
+        return (bool)$request->fetchColumn();
+    }
+
+    public function generateAvailableSlots(
+        string $date,
+        int $duration,
+        array $staffDispos,
+        array $serviceDispos
+    ): array {
+        $slots = [];
+
+        $dayName = strtoupper((new DateTime($date))->format('l'));
+        $mapDays = [
+            'MONDAY' => 'LUNDI',
+            'TUESDAY' => 'MARDI',
+            'WEDNESDAY' => 'MERCREDI',
+            'THURSDAY' => 'JEUDI',
+            'FRIDAY' => 'VENDREDI',
+            'SATURDAY' => 'SAMEDI',
+            'SUNDAY' => 'DIMANCHE'
+        ];
+        $jourSemaine = $mapDays[$dayName];
+
+        // Filtrer sur le jour
+        $staffDayDispos   = array_filter($staffDispos, fn($d) => $d->getJourSemaine() === $jourSemaine);
+        $serviceDayDispos = array_filter($serviceDispos, fn($d) => $d->getJourSemaine() === $jourSemaine);
+
+        foreach ($staffDayDispos as $s) {
+            foreach ($serviceDayDispos as $d) {
+                $start = max(new DateTime("$date " . $s->getStart()), new DateTime("$date " . $d->getStart()));
+                $end   = min(new DateTime("$date " . $s->getEnd()),   new DateTime("$date " . $d->getEnd()));
+
+                $current = clone $start;
+                while ($current < $end) {
+                    $slotEnd = (clone $current)->modify("+$duration minutes");
+                    if ($slotEnd <= $end) {
+                        $slots[] = [
+                            'start' => clone $current,
+                            'end'   => $slotEnd
+                        ];
+                    }
+                    $current->modify("+$duration minutes");
+                }
+            }
+        }
+
+        return $slots;
     }
 }
