@@ -1,78 +1,140 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<h1>Fiche de l'utilisateur</h1>
+<div class="container my-5">
+    <h1 class="mb-4 text-primary">
+        <i class="bi bi-person-circle"></i> Fiche de l'utilisateur
+    </h1>
 
-<?php if (!empty($_SESSION['success'])): ?>
-    <div style="color: green;"><?= htmlspecialchars($_SESSION['success']);
-                                unset($_SESSION['success']); ?></div>
-<?php endif; ?>
-<?php if (!empty($_SESSION['error'])): ?>
-    <div style="color: red;"><?= htmlspecialchars($_SESSION['error']);
-                                unset($_SESSION['error']); ?></div>
-<?php endif; ?>
+    <!-- Messages flash -->
+    <?php if (!empty($_SESSION['success'])): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($_SESSION['success']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['success']); ?>
+    <?php endif; ?>
 
-<p><strong>Nom :</strong> <?= htmlspecialchars($userToView->getNom()) ?></p>
-<p><strong>Prénom :</strong> <?= htmlspecialchars($userToView->getPrenom()) ?></p>
-<p><strong>Email :</strong> <?= htmlspecialchars($userToView->getEmail()) ?></p>
-<p><strong>Date de naissance :</strong> <?= htmlspecialchars($userToView->getDateNaissance() ?? '-') ?></p>
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <?= htmlspecialchars($_SESSION['error']) ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <?php unset($_SESSION['error']); ?>
+    <?php endif; ?>
 
-<?php
-$currentUser = $_SESSION['user'] ?? null;
-$isAdminOrStaff = $currentUser && $currentUser->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE']);
-?>
+    <?php
+    $currentUser = $_SESSION['user'] ?? null;
+    $isAdminOrStaff = $currentUser && $currentUser->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE']);
+    ?>
 
-<?php if ($isAdminOrStaff): ?>
-    <p><strong>Actif :</strong> <?= $userToView->isActive() ? 'Oui' : 'Non' ?></p>
+    <!-- Carte d'informations -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3 text-primary">
+                <?= htmlspecialchars($userToView->getPrenom() . ' ' . strtoupper($userToView->getNom())) ?>
+            </h5>
 
-    <p><strong>Rôles :</strong>
-        <?= implode(', ', array_map(fn($r) => htmlspecialchars($r->getName()), $userToView->getRoles())) ?>
-    </p>
-<?php endif; ?>
+            <p><strong>Email :</strong> <?= htmlspecialchars($userToView->getEmail()) ?></p>
+            <p><strong>Date de naissance :</strong> <?= htmlspecialchars($userToView->getDateNaissance() ?? '-') ?></p>
 
-<hr>
+            <?php if ($isAdminOrStaff): ?>
+                <p><strong>Actif :</strong>
+                    <?php if ($userToView->isActive()): ?>
+                        <span class="badge bg-success">Oui</span>
+                    <?php else: ?>
+                        <span class="badge bg-danger">Non</span>
+                    <?php endif; ?>
+                </p>
 
-<?php if ($userToView->hasRole('PATIENT')): ?>
-    <h3>Informations Patient</h3>
-    <p>Dossiers médicaux, historique des rendez-vous, prescriptions.</p>
-<?php endif; ?>
+                <p><strong>Rôles :</strong>
+                    <?php foreach ($userToView->getRoles() as $r): ?>
+                        <span class="badge bg-secondary"><?= htmlspecialchars($r->getName()) ?></span>
+                    <?php endforeach; ?>
+                </p>
+            <?php endif; ?>
+        </div>
+    </div>
 
-<?php if ($userToView->hasRole('MEDECIN')): ?>
-    <h3>Informations Médecin</h3>
-    <p>Planning, rendez-vous à venir, etc.</p>
-<?php endif; ?>
+    <!-- Sections selon les rôles -->
+    <?php if ($userToView->hasRole('PATIENT')): ?>
+        <div class="card mb-3 border-info">
+            <div class="card-header bg-info-subtle text-info fw-semibold">
+                <i class="bi bi-heart-pulse"></i> Informations Patient
+            </div>
+            <div class="card-body">
+                <p>Dossiers médicaux, historique des rendez-vous, prescriptions, etc.</p>
+            </div>
+        </div>
+    <?php endif; ?>
 
-<?php if ($userToView->hasRole('SECRETAIRE')): ?>
-    <h3>Informations Secrétaire</h3>
-    <p>Tableau de bord.</p>
-<?php endif; ?>
+    <?php if ($userToView->hasRole('MEDECIN')): ?>
+        <div class="card mb-3 border-success">
+            <div class="card-header bg-success-subtle text-success fw-semibold">
+                <i class="bi bi-stethoscope"></i> Informations Médecin
+            </div>
+            <div class="card-body">
+                <p>Planning personnel, rendez-vous à venir, statistiques des consultations.</p>
+            </div>
+        </div>
+    <?php endif; ?>
 
-<?php if ($userToView->hasRole('ADMIN')): ?>
-    <h3>Informations Administrateur</h3>
-    <p>Accès complet au système, gestion des utilisateurs et des rôles.</p>
-<?php endif; ?>
+    <?php if ($userToView->hasRole('SECRETAIRE')): ?>
+        <div class="card mb-3 border-warning">
+            <div class="card-header bg-warning-subtle text-warning fw-semibold">
+                <i class="bi bi-telephone"></i> Informations Secrétaire
+            </div>
+            <div class="card-body">
+                <p>Tableau de bord, gestion des rendez-vous et communication avec les patients.</p>
+            </div>
+        </div>
+    <?php endif; ?>
 
-<hr>
+    <?php if ($userToView->hasRole('ADMIN')): ?>
+        <div class="card mb-3 border-danger">
+            <div class="card-header bg-danger-subtle text-danger fw-semibold">
+                <i class="bi bi-gear"></i> Informations Administrateur
+            </div>
+            <div class="card-body">
+                <p>Accès complet au système, gestion des utilisateurs et des rôles.</p>
+            </div>
+        </div>
+    <?php endif; ?>
 
-<?php if ($currentUser && $currentUser->getId() === $userToView->getId()): ?>
-    <!-- Le user édite son propre profil -->
-    <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Modifier mon profil</a>
-<?php elseif ($isAdminOrStaff): ?>
-    <!-- Admin ou staff édite un autre utilisateur -->
-    <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>">Éditer</a>
-<?php endif; ?>
+    <!-- Boutons d'action -->
+    <div class="mt-4">
+        <?php if ($currentUser && $currentUser->getId() === $userToView->getId()): ?>
+            <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>"
+                class="btn btn-primary">
+                <i class="bi bi-pencil"></i> Modifier mon profil
+            </a>
+        <?php elseif ($isAdminOrStaff): ?>
+            <a href="<?= BASE_URL ?>index.php?page=users_edit&id=<?= $userToView->getId() ?>"
+                class="btn btn-outline-primary">
+                <i class="bi bi-pencil-square"></i> Éditer
+            </a>
+        <?php endif; ?>
 
-<?php if ($isAdminOrStaff): ?>
-    | <a href="<?= BASE_URL ?>index.php?page=users">Retour à la liste</a>
-<?php endif; ?>
+        <?php if ($currentUser && $currentUser->hasRole('ADMIN')): ?>
+            <a href="<?= BASE_URL ?>index.php?page=users" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+        <?php endif; ?>
 
-<?php if ($currentUser && $currentUser->hasRole('ADMIN') && $userToView->getId() !== $currentUser->getId()): ?>
-    <form method="POST" action="<?= BASE_URL ?>index.php?page=users_toggle&id=<?= $userToView->getId() ?>" style="display:inline;">
-        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
-        <input type="hidden" name="id" value="<?= $userToView->getId() ?>">
-        <button type="submit" onclick="return confirm('Voulez-vous vraiment <?= $userToView->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?');">
-            <?= $userToView->isActive() ? 'Désactiver' : 'Activer' ?>
-        </button>
-    </form>
-<?php endif; ?>
+        <?php if ($currentUser && $currentUser->hasRole('ADMIN') && $userToView->getId() !== $currentUser->getId()): ?>
+            <form method="POST"
+                action="<?= BASE_URL ?>index.php?page=users_toggle&id=<?= $userToView->getId() ?>"
+                class="d-inline">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
+                <input type="hidden" name="id" value="<?= $userToView->getId() ?>">
+                <button type="submit"
+                    class="btn btn-outline-<?= $userToView->isActive() ? 'danger' : 'success' ?> ms-2"
+                    onclick="return confirm('Voulez-vous vraiment <?= $userToView->isActive() ? 'désactiver' : 'activer' ?> cet utilisateur ?');">
+                    <i class="bi <?= $userToView->isActive() ? 'bi-person-x' : 'bi-person-check' ?>"></i>
+                    <?= $userToView->isActive() ? 'Désactiver' : 'Activer' ?>
+                </button>
+            </form>
+        <?php endif; ?>
+    </div>
+</div>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

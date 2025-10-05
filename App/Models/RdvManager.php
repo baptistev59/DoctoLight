@@ -11,29 +11,75 @@ class RdvManager
     // Créer un RDV
     public function createRdv(Rdv $rdv): bool
     {
+        // Vérifier s'il existe déjà un RDV actif pour ce patient au même créneau
+        $sqlCheckPatient = "SELECT COUNT(*) FROM rdv 
+                        WHERE patient_id = :pid 
+                        AND date_rdv = :date 
+                        AND heure_debut = :heure 
+                        AND statut != 'ANNULE'";
+        $stmt = $this->pdo->prepare($sqlCheckPatient);
+        $stmt->execute([
+            ':pid'   => $rdv->getPatientId(),
+            ':date'  => $rdv->getDateRdv()->format('Y-m-d'),
+            ':heure' => $rdv->getHeureDebut()
+        ]);
+
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("Ce patient a déjà un RDV actif à cette heure.");
+        }
+
+        // Vérifier aussi pour le staff (médecin)
+        $sqlCheckStaff = "SELECT COUNT(*) FROM rdv 
+                      WHERE staff_id = :sid 
+                      AND date_rdv = :date 
+                      AND heure_debut = :heure 
+                      AND statut != 'ANNULE'";
+        $stmt = $this->pdo->prepare($sqlCheckStaff);
+        $stmt->execute([
+            ':sid'   => $rdv->getStaffId(),
+            ':date'  => $rdv->getDateRdv()->format('Y-m-d'),
+            ':heure' => $rdv->getHeureDebut()
+        ]);
+
+        if ($stmt->fetchColumn() > 0) {
+            throw new Exception("Le médecin a déjà un RDV actif à cette heure.");
+        }
+
+        // Si tout va bien, on insère le RDV
         $sql = "INSERT INTO rdv (
-                    patient_id, staff_id, service_id, dispo_staff_id, dispo_service_id, 
-                    date_rdv, heure_debut, heure_fin, statut
-                ) VALUES (
-                    :patient_id, :staff_id, :service_id, :dispo_staff_id, :dispo_service_id,
-                    :date_rdv, :heure_debut, :heure_fin, :statut
-                )";
+                patient_id, staff_id, service_id, dispo_staff_id, dispo_service_id, 
+                date_rdv, heure_debut, heure_fin, duree, statut
+            ) VALUES (
+                :patient_id, :staff_id, :service_id, :dispo_staff_id, :dispo_service_id,
+                :date_rdv, :heure_debut, :heure_fin, :duree, :statut
+            )";
 
         $params = [
-            ':patient_id'      => $rdv->getPatientId(),
-            ':staff_id'        => $rdv->getStaffId(),
-            ':service_id'      => $rdv->getServiceId(),
-            ':dispo_staff_id'  => $rdv->getDispoStaffId(),
+            ':patient_id'       => $rdv->getPatientId(),
+            ':staff_id'         => $rdv->getStaffId(),
+            ':service_id'       => $rdv->getServiceId(),
+            ':dispo_staff_id'   => $rdv->getDispoStaffId(),
             ':dispo_service_id' => $rdv->getDispoServiceId(),
-            ':date_rdv'        => $rdv->getDateRdv()->format('Y-m-d'),
-            ':heure_debut'     => $rdv->getHeureDebut(),
-            ':heure_fin'       => $rdv->getHeureFin(),
-            ':statut'          => $rdv->getStatut()
+            ':date_rdv'         => $rdv->getDateRdv()->format('Y-m-d'),
+            ':heure_debut'      => $rdv->getHeureDebut(),
+            ':heure_fin'        => $rdv->getHeureFin(),
+            ':duree'            => $rdv->getDuree(),
+            ':statut'           => $rdv->getStatut()
         ];
 
-        $request = $this->pdo->prepare($sql);
-        return $request->execute($params);
+        $stmt = $this->pdo->prepare($sql);
+
+        try {
+            return $stmt->execute($params);
+        } catch (PDOException $e) {
+            // Capture propre si la contrainte SQL est encore violée
+            if ($e->getCode() === '23000') {
+                throw new Exception("Conflit détecté : un RDV existe déjà à ce créneau.");
+            }
+            throw $e;
+        }
     }
+
 
     // Récupérer un RDV par ID
     public function getRdvById(int $id): ?Rdv
@@ -59,19 +105,25 @@ class RdvManager
         }
     }
 
-    // Récupérer tous les RDV d’un patient
+    // Récupérer tous les RDV d’un patient avec infos service + médecin
     public function getRdvByPatient(int $patientId): array
     {
-        $sql = "SELECT * FROM rdv WHERE patient_id = :patient_id ORDER BY date_rdv, heure_debut";
+        $sql = "SELECT r.*,
+                   s.nom AS service_nom,
+                   st.nom AS staff_nom, st.prenom AS staff_prenom
+            FROM rdv r
+            JOIN services s ON r.service_id = s.id
+            JOIN users st ON r.staff_id = st.id
+            WHERE r.patient_id = :patient_id
+            ORDER BY r.date_rdv ASC, r.heure_debut ASC";
+
         $request = $this->pdo->prepare($sql);
         $request->execute([':patient_id' => $patientId]);
 
-        $rdvs = [];
-        while ($row = $request->fetch(PDO::FETCH_ASSOC)) {
-            $rdvs[] = new Rdv($row);
-        }
-        return $rdvs;
+        return $request->fetchAll(PDO::FETCH_ASSOC);
     }
+
+
 
     // Récupérer tous les RDV d’un staff
     public function getRdvByStaff(int $staffId): array
@@ -88,48 +140,52 @@ class RdvManager
     }
 
     // Mettre à jour le statut d’un RDV
-    public function updateStatut(Rdv $rdv): bool
+    public function updateStatut(int $rdvId, string $statut): bool
     {
         $sql = "UPDATE rdv SET statut = :statut WHERE id = :id";
-        $params = [
-            ':statut' => $rdv->getStatut(),
-            ':id'     => $rdv->getId()
-        ];
-        $request = $this->pdo->prepare($sql);
-        return $request->execute($params);
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':statut' => $statut,
+            ':id'     => $rdvId
+        ]);
     }
+
 
     // Mettre à jour un RDV complet
     public function updateRdv(Rdv $rdv): bool
     {
         $sql = "UPDATE rdv SET 
-                    patient_id = :patient_id,
-                    staff_id = :staff_id,
-                    service_id = :service_id,
-                    dispo_staff_id = :dispo_staff_id,
-                    dispo_service_id = :dispo_service_id,
-                    date_rdv = :date_rdv,
-                    heure_debut = :heure_debut,
-                    heure_fin = :heure_fin,
-                    statut = :statut
-                WHERE id = :id";
+                patient_id = :patient_id,
+                staff_id = :staff_id,
+                service_id = :service_id,
+                dispo_staff_id = :dispo_staff_id,
+                dispo_service_id = :dispo_service_id,
+                date_rdv = :date_rdv,
+                heure_debut = :heure_debut,
+                heure_fin = :heure_fin,
+                statut = :statut
+            WHERE id = :id";
 
         $params = [
-            ':patient_id'      => $rdv->getPatientId(),
-            ':staff_id'        => $rdv->getStaffId(),
-            ':service_id'      => $rdv->getServiceId(),
-            ':dispo_staff_id'  => $rdv->getDispoStaffId(),
+            ':patient_id'       => $rdv->getPatientId(),
+            ':staff_id'         => $rdv->getStaffId(),
+            ':service_id'       => $rdv->getServiceId(),
+            ':dispo_staff_id'   => $rdv->getDispoStaffId(),
             ':dispo_service_id' => $rdv->getDispoServiceId(),
-            ':date_rdv'        => $rdv->getDateRdv()->format('Y-m-d'),
-            ':heure_debut'     => $rdv->getHeureDebut(),
-            ':heure_fin'       => $rdv->getHeureFin(),
-            ':statut'          => $rdv->getStatut(),
-            ':id'              => $rdv->getId()
+            ':date_rdv'         => $rdv->getDateRdv() instanceof DateTimeInterface
+                ? $rdv->getDateRdv()->format('Y-m-d')
+                : $rdv->getDateRdv(),
+            ':heure_debut'      => $rdv->getHeureDebut(),
+            ':heure_fin'        => $rdv->getHeureFin(),
+            ':statut'           => $rdv->getStatut(),
+            ':id'               => $rdv->getId()
         ];
 
         $request = $this->pdo->prepare($sql);
         return $request->execute($params);
     }
+
+
 
     // Supprimer un RDV
     public function deleteRdv(int $id): bool
@@ -140,48 +196,48 @@ class RdvManager
     }
 
     // Recherche les confilts
-    public function findConflict(int $entityId, DateTimeInterface $start, int $duration, string $type = 'staff'): bool
-    {
+    public function findConflict(
+        int $entityId,
+        DateTimeInterface $start,
+        int $duration,
+        string $type = 'staff',
+        ?int $excludeId = null
+    ): bool {
         if ($start instanceof DateTimeImmutable) {
             $start = new DateTime($start->format('Y-m-d H:i:s'));
         }
 
         $end = (clone $start)->modify("+{$duration} minutes");
 
-        if ($type === 'staff') {
-            // Vérifie si le médecin a déjà un RDV sur ce créneau (tous services confondus)
-            $sql = "SELECT COUNT(*) FROM rdv 
-                WHERE staff_id = :id
-                AND (
-                    (date_rdv = :date_rdv)
-                    AND (
-                        (heure_debut < :end AND heure_fin > :start)
-                    )
-                )";
-        } elseif ($type === 'patient') {
-            // Vérifie si le patient a déjà un RDV sur ce créneau
-            $sql = "SELECT COUNT(*) FROM rdv 
-                WHERE patient_id = :id
-                AND (
-                    (date_rdv = :date_rdv)
-                    AND (
-                        (heure_debut < :end AND heure_fin > :start)
-                    )
-                )";
-        } else {
-            throw new InvalidArgumentException("Type $type invalide pour findConflict()");
+        $column = $type === 'staff' ? 'staff_id' : 'patient_id';
+
+        $sql = "SELECT COUNT(*) FROM rdv 
+            WHERE $column = :id
+            AND date_rdv = :date_rdv
+            AND (heure_debut < :end AND heure_fin > :start)
+            AND statut != 'ANNULE'";
+
+        if ($excludeId) {
+            $sql .= " AND id != :excludeId";
         }
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([
+
+        $params = [
             ':id'       => $entityId,
             ':date_rdv' => $start->format('Y-m-d'),
             ':start'    => $start->format('H:i:s'),
             ':end'      => $end->format('H:i:s'),
-        ]);
+        ];
+        if ($excludeId) {
+            $params[':excludeId'] = $excludeId;
+        }
+
+        $stmt->execute($params);
 
         return $stmt->fetchColumn() > 0;
     }
+
 
 
     public function generateAvailableSlots(
@@ -208,6 +264,13 @@ class RdvManager
         $staffDayDispos   = array_filter($staffDispos, fn($d) => $d->getJourSemaine() === $jourSemaine);
         $serviceDayDispos = array_filter($serviceDispos, fn($d) => $d->getJourSemaine() === $jourSemaine);
 
+        // 🔹 Récupérer les RDV existants non annulés pour la journée
+        $sql = "SELECT heure_debut, heure_fin FROM rdv 
+            WHERE date_rdv = :date AND statut != 'ANNULE'";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':date' => $date]);
+        $rdvOccupes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
         foreach ($staffDayDispos as $s) {
             foreach ($serviceDayDispos as $d) {
                 $start = max(new DateTime("$date " . $s->getStart()), new DateTime("$date " . $d->getStart()));
@@ -216,7 +279,17 @@ class RdvManager
                 $current = clone $start;
                 while ($current < $end) {
                     $slotEnd = (clone $current)->modify("+$duration minutes");
-                    if ($slotEnd <= $end) {
+                    $isBusy = false;
+                    foreach ($rdvOccupes as $rdv) {
+                        if (
+                            ($current->format('H:i:s') < $rdv['heure_fin']) &&
+                            ($slotEnd->format('H:i:s') > $rdv['heure_debut'])
+                        ) {
+                            $isBusy = true;
+                            break;
+                        }
+                    }
+                    if (!$isBusy && $slotEnd <= $end) {
                         $slots[] = [
                             'start' => clone $current,
                             'end'   => $slotEnd

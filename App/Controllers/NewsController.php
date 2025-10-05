@@ -14,26 +14,25 @@ class NewsController
     }
 
     // Afficher toutes les news
-    public function list()
+    public function list(): void
     {
-        $newsList = $this->newsManager->getAllNews();
+        // Récupération de la page actuelle
+        $pageNum = max(1, (int)($_GET['page_num'] ?? 1));
+        $perPage = 5; // nombre d’articles par page
+        $offset = ($pageNum - 1) * $perPage;
 
-        // Associer chaque news avec son auteur
-        $newsWithAuthors = [];
+        // Récupération des actualités paginées
+        $result = $this->newsManager->findAllWithPagination($perPage, $offset);
 
-        foreach ($newsList as $news) {
-            $author = $this->userManager->findById($news->getCreatedBy());
-            $newsWithAuthors[] = [
-                'news'   => $news,
-                'author' => $author
-            ];
-        }
+        $newsWithAuthors = $result['newsWithAuthors'] ?? [];
+        $totalPages = $result['totalPages'];
 
-        // rendre disponible $authController dans la vue
+        // Rendre $authController disponible dans la vue
         $authController = $this->authController;
 
         include __DIR__ . '/../Views/news/list.php';
     }
+
     // Afficher une seule news
     public function show()
     {
@@ -45,6 +44,9 @@ class NewsController
         $news = $this->newsManager->getNewsById($id);
 
         $author = $this->userManager->findById($news->getCreatedBy());
+
+        $previousId = $this->newsManager->getPreviousNewsId($news->getId());
+        $nextId = $this->newsManager->getNextNewsId($news->getId());
 
         if (!$news) {
             die("Actualité non trouvée !");
@@ -75,26 +77,37 @@ class NewsController
         // Utilisateur connecté
         $currentUser = $_SESSION['user'] ?? null;
 
-
-
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
-        $createdBy = intval($currentUser->getId() ?? 1); // Désactive le login obligatoire);
+        $createdBy = intval($currentUser->getId() ?? 1);
+
+        if (strlen($titre) < 3 || strlen($contenu) < 3) {
+            header('Location: index.php?page=create-news&error=validation');
+            exit;
+        }
+
+        // Upload de l'image
+        $imageName = null;
+        if (!empty($_FILES['image']['name'])) {
+            $uploadDir = __DIR__ . '/../../Public/uploads/news/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $imageName = uniqid('news_') . '.' . strtolower($ext);
+            move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $imageName);
+        }
 
         $news = new News([
             'titre' => $titre,
             'contenu' => $contenu,
-            'created_by' => $createdBy
+            'created_by' => $createdBy,
+            'image' => $imageName
         ]);
 
-        if (strlen($titre) < 3 || strlen($contenu) < 3) {
-            header('Location: index.php?page=create-news&error=validation');
+        if ($this->newsManager->createNews($news)) {
+            header("Location: index.php?page=news&success=created");
         } else {
-            if ($this->newsManager->createNews($news)) {
-                header("Location: index.php?page=news&success=created");
-            } else {
-                die("Erreur lors de la création de l'actualité.");
-            }
+            die("Erreur lors de la création de l'actualité.");
         }
     }
 
@@ -117,12 +130,29 @@ class NewsController
         $id = intval($_GET['id']);
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
-
         $news = $this->newsManager->getNewsById($id);
+        $imageName = $news->getImage();
 
         if (!$news) die("Acyualité non trouvée !");
+
+        if (!empty($_FILES['image']['name'])) {
+            $uploadDir = __DIR__ . '/../../Public/uploads/news/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
+
+            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $newImage = uniqid('news_') . '.' . strtolower($ext);
+
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $newImage)) {
+                if ($imageName && file_exists($uploadDir . $imageName)) {
+                    unlink($uploadDir . $imageName);
+                }
+                $imageName = $newImage;
+            }
+        }
+
         $news->setTitre($titre);
         $news->setContenu($contenu);
+        $news->setImage($imageName);
 
         if ($this->newsManager->updateNews($news)) {
             header("Location: index.php?page=news&success=updated");

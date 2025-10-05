@@ -36,8 +36,15 @@ class ServiceManager
     // Créer un service
     public function createService(Service $service): bool
     {
-        $sql = "INSERT INTO services (nom) VALUES (:nom)";
-        $params = [':nom' => $service->getNom()];
+        $sql = "INSERT INTO services (nom, duree, description, image, is_active)
+                VALUES (:nom, :duree, :description, :image, :is_active)";
+        $params = [
+            ':nom'         => $service->getNom(),
+            ':duree'       => $service->getDuree(),
+            ':description' => $service->getDescription(),
+            ':image'       => $service->getImage(),
+            ':is_active'   => $service->isActive() ? 1 : 0,
+        ];
 
         $request = $this->pdo->prepare($sql);
         return $request->execute($params);
@@ -46,10 +53,20 @@ class ServiceManager
     // Mettre à jour un service
     public function updateService(Service $service): bool
     {
-        $sql = "UPDATE services SET nom = :nom WHERE id = :id";
+        $sql = "UPDATE services
+                SET nom = :nom,
+                    duree = :duree,
+                    description = :description,
+                    image = :image,
+                    is_active = :is_active
+                WHERE id = :id";
         $params = [
-            ':nom' => $service->getNom(),
-            ':id'  => $service->getId()
+            ':nom'         => $service->getNom(),
+            ':duree'       => $service->getDuree(),
+            ':description' => $service->getDescription(),
+            ':image'       => $service->getImage(),
+            ':is_active'   => $service->isActive() ? 1 : 0,
+            ':id'          => $service->getId(),
         ];
         $request = $this->pdo->prepare($sql);
         return $request->execute($params);
@@ -61,5 +78,19 @@ class ServiceManager
         $sql = "DELETE FROM services WHERE id = :id";
         $request = $this->pdo->prepare($sql);
         return $request->execute([':id' => $id]);
+    }
+
+    // Récupérer uniquement les services actifs (utile pour la prise de RDV)
+    public function getActiveServices(): array
+    {
+        $sql = "SELECT * FROM services WHERE is_active = 1 ORDER BY nom";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+
+        $services = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $services[] = new Service($row);
+        }
+        return $services;
     }
 }

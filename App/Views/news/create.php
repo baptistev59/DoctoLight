@@ -1,34 +1,49 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<h2>Créer une nouvelle News</h2>
+<div class="container py-5">
+    <h2 class="text-primary mb-4 border-bottom pb-2">Créer une nouvelle actualité</h2>
 
-<?php if (isset($_GET['error']) && $_GET['error'] === 'validation'): ?>
-    <p style="color: red;">Le titre et le contenu doivent contenir au moins 3 caractères.</p>
-<?php endif; ?>
+    <?php if (isset($_GET['error']) && $_GET['error'] === 'validation'): ?>
+        <div class="alert alert-danger">
+            Le titre et le contenu doivent contenir au moins 3 caractères.
+        </div>
+    <?php endif; ?>
 
-
-<form id="newsForm" action="index.php?page=create-news-valid" method="post">
-    <div>
-        <!-- Insertion du token de sécurité -->
+    <form id="newsForm" action="index.php?page=create-news-valid" method="post" enctype="multipart/form-data" class="bg-light p-4 rounded shadow-sm">
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
-        <label for="titre">Titre :</label>
-        <input type="text" id="titre" name="titre" required>
-    </div>
+        <div class="mb-3">
+            <label for="titre" class="form-label fw-semibold">Titre</label>
+            <input type="text" id="titre" name="titre" class="form-control" placeholder="Titre de l'actualité" required>
+        </div>
 
-    <div>
-        <label for="contenu">Contenu :</label>
-        <textarea id="contenu" name="contenu" rows="5" required></textarea>
-    </div>
+        <div class="mb-3">
+            <label for="contenu" class="form-label fw-semibold">Contenu</label>
+            <textarea id="contenu" name="contenu" rows="8" class="form-control" required></textarea>
+        </div>
 
-    <button type="submit">Créer la news</button>
-</form>
+        <div class="mb-3">
+            <label for="image" class="form-label fw-semibold">Image (optionnelle)</label>
+            <input type="file" id="image" name="image" accept="image/*" class="form-control">
+            <small class="text-muted">Formats acceptés : JPG, PNG, WEBP — taille max : 2 Mo</small>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Créer la news
+            </button>
+            <a href="index.php?page=news" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+    </form>
+</div>
+
 <script>
-    // Avant l'envoi du formulaire, TinyMCE réinjecte le contenu dans le <textarea>
-    document.getElementById("newsForm").addEventListener("submit", function(e) {
+    // Sauvegarde du contenu TinyMCE avant envoi
+    document.getElementById("newsForm").addEventListener("submit", function() {
         tinymce.triggerSave();
     });
 </script>
-
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

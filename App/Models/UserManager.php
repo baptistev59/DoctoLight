@@ -124,8 +124,8 @@ class UserManager
         }
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-
         $stmt->execute();
+
         $usersData = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $users = [];
@@ -136,25 +136,28 @@ class UserManager
             $users[] = new User($data);
         }
 
-        // Calcul du nombre total pour la pagination
+        // --- Calcul du nombre total pour la pagination
         $countSql = "SELECT COUNT(*) FROM users WHERE 1";
         if ($search !== '') {
             $countSql .= " AND (nom LIKE :search OR prenom LIKE :search OR email LIKE :search)";
         }
+
         $countStmt = $this->pdo->prepare($countSql);
         if ($search !== '') {
             $countStmt->bindValue(':search', "%$search%");
         }
         $countStmt->execute();
         $totalUsers = (int)$countStmt->fetchColumn();
-        $totalPages = ceil($totalUsers / $limit);
+
+        $totalPages = (int)ceil($totalUsers / $limit);
 
         return [
-            'users'      => $users,
-            'totalPages' => $totalPages,
-            'totalPages' => $totalPages,
+            'users'       => $users,
+            'totalUsers'  => $totalUsers,
+            'totalPages'  => $totalPages,
         ];
     }
+
 
     // Activer / désactiver un utilisateur
     public function toggleActive(User $user): void
@@ -270,60 +273,69 @@ class UserManager
         try {
             $this->pdo->beginTransaction();
 
-            $query = "UPDATE users SET nom = :nom, prenom = :prenom, email = :email, 
-                  date_naissance = :date_naissance, is_active = :is_active";
+            $fields = [
+                "nom = :nom",
+                "prenom = :prenom",
+                "email = :email",
+                "date_naissance = :date_naissance",
+            ];
             $params = [
                 ':nom'            => $data['nom'],
                 ':prenom'         => $data['prenom'],
                 ':email'          => $data['email'],
                 ':date_naissance' => $data['date_naissance'] ?? null,
-                ':is_active'      => $data['is_active'],
                 ':id'             => $user->getId(),
             ];
 
+            // Is_active : seulement si fourni
+            if (array_key_exists('is_active', $data)) {
+                $fields[] = "is_active = :is_active";
+                $params[':is_active'] = (int) !!$data['is_active'];
+            }
+
+            // Mot de passe : seulement si fourni
             if (!empty($data['password'])) {
-                // var_dump($data['password']);
                 if ($data['password'] !== ($data['password_confirm'] ?? '')) {
                     throw new Exception("Les mots de passe ne correspondent pas.");
                 }
-                // Vérifie si ce n'est pas déjà un hash
                 if (!preg_match('/^\$2y\$/', $data['password'])) {
+                    $fields[] = "password = :password";
                     $params[':password'] = password_hash(trim($data['password']), PASSWORD_DEFAULT);
-                    $query .= ", password = :password";
                 }
             }
 
-            $query .= " WHERE id = :id";
-
+            $query = "UPDATE users SET " . implode(', ', $fields) . " WHERE id = :id";
             $request = $this->pdo->prepare($query);
             $request->execute($params);
 
-            // Mise à jour des rôles seulement si fourni
-            if (isset($data['roles'])) {
-                // Supprimer les anciens rôles
-                $this->pdo->prepare("DELETE FROM user_roles WHERE user_id = :id")
-                    ->execute([':id' => $user->getId()]);
+            // Rôles : seulement si fournis
+            // Ne mettre à jour les rôles que s’ils sont envoyés explicitement
+            // Si tableau vide, on ne touche pas → garde les rôles existants
+            if (array_key_exists('roles', $data)) {
+                if (!empty($data['roles'])) {
+                    // Supprimer les anciens rôles
+                    $this->pdo->prepare("DELETE FROM user_roles WHERE user_id = :id")
+                        ->execute([':id' => $user->getId()]);
 
-                // Réinsérer les nouveaux rôles
-                foreach ($data['roles'] as $roleName) {
-                    $roleId = $this->getRoleIdByName($roleName);
-                    if ($roleId) {
-                        $requestRole = $this->pdo->prepare("
-                INSERT INTO user_roles (user_id, role_id)
-                VALUES (:user_id, :role_id)
-            ");
-                        $requestRole->execute([
-                            ':user_id' => $user->getId(),
-                            ':role_id' => $roleId,
-                        ]);
+                    // Réinsérer les nouveaux rôles
+                    foreach ($data['roles'] as $roleName) {
+                        $roleId = $this->getRoleIdByName($roleName);
+                        if ($roleId) {
+                            $stmt = $this->pdo->prepare("
+                    INSERT INTO user_roles (user_id, role_id)
+                    VALUES (:user_id, :role_id)
+                ");
+                            $stmt->execute([
+                                ':user_id' => $user->getId(),
+                                ':role_id' => $roleId,
+                            ]);
+                        }
                     }
                 }
             }
 
 
             $this->pdo->commit();
-
-            // Retourne l’objet User mis à jour
             return $this->findById($user->getId());
         } catch (Exception $e) {
             $this->pdo->rollBack();
@@ -331,6 +343,7 @@ class UserManager
             return null;
         }
     }
+
 
 
     // Cherche un rôle par son nom

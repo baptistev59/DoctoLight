@@ -4,114 +4,99 @@
 <head>
     <meta charset="UTF-8">
     <title>DoctoLight</title>
-    <link rel="stylesheet" href="<?= BASE_URL ?>styles.css">
-    <!-- Place the first <script> tag in your HTML's <head> -->
-    <script src="https://cdn.tiny.cloud/1/v7mkx9uc5az8ogwj4gkxn3hjg3jqs2wiqxauqdkwuyrpf7qj/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
 
-    <!-- Place the following <script> and <textarea> tags your HTML's <body> -->
-    <script>
-        tinymce.init({
-            selector: 'textarea',
-            plugins: [
-                // Core editing features
-                'anchor', 'autolink', 'charmap', 'codesample', 'emoticons', 'link', 'lists', 'media', 'searchreplace', 'table', 'visualblocks', 'wordcount',
-                // Your account includes a free trial of TinyMCE premium features
-                // Try the most popular premium features until Oct 13, 2025:
-                'checklist', 'mediaembed', 'casechange', 'formatpainter', 'pageembed', 'a11ychecker', 'tinymcespellchecker', 'permanentpen', 'powerpaste', 'advtable', 'advcode', 'advtemplate', 'ai', 'uploadcare', 'mentions', 'tinycomments', 'tableofcontents', 'footnotes', 'mergetags', 'autocorrect', 'typography', 'inlinecss', 'markdown', 'importword', 'exportword', 'exportpdf'
-            ],
-            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link media table mergetags | addcomment showcomments | spellcheckdialog a11ycheck typography uploadcare | align lineheight | checklist numlist bullist indent outdent | emoticons charmap | removeformat',
-            tinycomments_mode: 'embedded',
-            tinycomments_author: 'Author name',
-            mergetags_list: [{
-                    value: 'First.Name',
-                    title: 'First Name'
-                },
-                {
-                    value: 'Email',
-                    title: 'Email'
-                },
-            ],
-            ai_request: (request, respondWith) => respondWith.string(() => Promise.reject('See docs to implement AI Assistant')),
-            uploadcare_public_key: '28bf5d29734ad322e374',
-            setup: function(editor) {
-                // Avant la soumission du formulaire, on force la sauvegarde
-                editor.on('change', function() {
-                    tinymce.triggerSave();
-                });
-            }
-        });
-    </script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- TinyMCE -->
+
 </head>
 
-<body>
-    <header>
-        <h1>DoctoLight</h1>
+<body class="d-flex flex-column min-vh-100 bg-light">
 
-        <?php
-        // Utilisateur connecté
-        $currentUser = $_SESSION['user'] ?? null;
-        $currentRoles = $currentUser instanceof User ? $currentUser->getRoles() : [];
-        ?>
+    <!-- ================= HEADER ================= -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-white" href="<?= BASE_URL ?>index.php">
+                <i class="bi bi-hospital me-1"></i> DoctoLight
+            </a>
 
-        <?php if ($currentUser instanceof User): ?>
-            <p>
-                Bonjour,
-                <strong><?= htmlspecialchars($currentUser->getPrenom() . " " . $currentUser->getNom()) ?></strong>
-                (<?= htmlspecialchars($currentUser->getHighestRole() ?? '') ?>)
-            </p>
-        <?php endif; ?>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <nav>
-            <a href="<?= BASE_URL ?>index.php">Accueil</a> |
-            <a href="<?= BASE_URL ?>index.php?page=news">Actualités</a>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php">Accueil</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=news">Actualités</a></li>
 
-            <?php if ($currentUser instanceof User): ?>
-                | <a href="<?= BASE_URL ?>index.php?page=profile">Profil</a>
-                | <a href="<?= BASE_URL ?>index.php?page=logout">Déconnexion</a>
+                    <?php
+                    $currentUser = $_SESSION['user'] ?? null;
+                    $currentRoles = $currentUser instanceof User ? $currentUser->getRoles() : [];
+                    ?>
 
+                    <?php if ($currentUser instanceof User): ?>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
+                                <?= htmlspecialchars($currentUser->getPrenom() . " " . $currentUser->getNom()) ?>
+                                (<?= htmlspecialchars($currentUser->getHighestRole() ?? '') ?>)
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="<?= BASE_URL ?>index.php?page=profile"><i class="bi bi-person-circle me-1"></i> Profil</a></li>
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>index.php?page=logout"><i class="bi bi-box-arrow-right me-1"></i> Déconnexion</a></li>
+                            </ul>
+                        </li>
 
-                <?php
-                // Définition des liens par rôle
-                $menuLinks = [
-                    'ADMIN'      => [
-                        'Administration' => BASE_URL . 'index.php?page=users',
-                    ],
-                    'SECRETAIRE' => [
-                        'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
-                        'Prendre RDV'     => BASE_URL . 'index.php?page=create_rdv',
-                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
-                    ],
-                    'MEDECIN'    => [
-                        'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
-                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
-                    ],
-                    'PATIENT'    => [
-                        'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
-                        'Liste RDV'       => BASE_URL . 'index.php?page=rdv'
-                    ],
-                ];
+                        <?php
+                        // Liens par rôle
+                        $menuLinks = [
+                            'ADMIN' => [
+                                'Administration'   => BASE_URL . 'index.php?page=users',
+                                'Services'         => BASE_URL . 'index.php?page=services',
+                            ],
+                            'SECRETAIRE' => [
+                                'Tableau de bord'  => BASE_URL . 'index.php?page=dashboard',
+                                'Prendre RDV'      => BASE_URL . 'index.php?page=create_rdv',
+                                'Liste RDV'        => BASE_URL . 'index.php?page=rdv',
+                                'Services'         => BASE_URL . 'index.php?page=services',
+                            ],
+                            'MEDECIN' => [
+                                'Tableau de bord'  => BASE_URL . 'index.php?page=dashboard',
+                                'Liste RDV'        => BASE_URL . 'index.php?page=rdv',
+                            ],
+                            'PATIENT' => [
+                                'Prendre RDV'      => BASE_URL . 'index.php?page=create_rdv',
+                                'Mes RDV'          => BASE_URL . 'index.php?page=rdv_listpatient',
+                            ],
+                        ];
 
-                // Parcours tous les rôles de l'utilisateur connecté et affiche les liens uniques
-                $displayed = [];
-                foreach ($currentRoles as $role) {
-                    $roleName = is_string($role) ? $role : $role->getName();
-                    if (!empty($menuLinks[$roleName])) {
-                        foreach ($menuLinks[$roleName] as $label => $url) {
-                            if (!in_array($label, $displayed, true)) {
-                                echo " | <a href=\"{$url}\">{$label}</a>";
-                                $displayed[] = $label;
+                        $displayed = [];
+                        foreach ($currentRoles as $role) {
+                            $roleName = is_string($role) ? $role : $role->getName();
+                            if (!empty($menuLinks[$roleName])) {
+                                foreach ($menuLinks[$roleName] as $label => $url) {
+                                    if (!in_array($label, $displayed, true)) {
+                                        echo '<li class="nav-item"><a class="nav-link text-white" href="' . $url . '">' . $label . '</a></li>';
+                                        $displayed[] = $label;
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                ?>
-
-            <?php else: ?>
-                | <a href="<?= BASE_URL ?>index.php?page=login">Connexion</a>
-                | <a href="<?= BASE_URL ?>index.php?page=register">Inscription</a>
-            <?php endif; ?>
-        </nav>
-        <hr>
-
+                        ?>
+                    <?php else: ?>
+                        <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=login"><i class="bi bi-box-arrow-in-right me-1"></i> Connexion</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=register"><i class="bi bi-person-plus me-1"></i> Inscription</a></li>
+                    <?php endif; ?>
+                </ul>
+            </div>
+        </div>
     </header>
-    <main>
+
+    <!-- ================= MAIN ================= -->
+    <main class="container flex-grow-1 py-5">

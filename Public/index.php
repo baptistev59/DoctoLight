@@ -51,10 +51,14 @@ $routes = [
     ],
 
     // RDV
-    'rdv' => ['controller' => 'RDVController', 'method' => 'planning'],
+    'rdv' => ['controller' => 'RDVController', 'method' => 'planning', 'role' => ['MEDECIN', 'SECRETAIRE']],
     'create_rdv' => ['controller' => 'RDVController', 'method' => 'create'],
     'create_rdv_valid' => ['controller' => 'RDVController', 'method' => 'createValid'],
     'rdv_store' => ['controller' => 'RDVController', 'method' => 'store', 'role' => ['PATIENT', 'SECRETAIRE']],
+    'rdv_listpatient' => ['controller' => 'RDVController', 'method' => 'listPatient', 'role' => 'PATIENT'],
+    'rdv_cancel' => ['controller' => 'RDVController', 'method' => 'rdvCancel', 'role' => ['PATIENT', 'SECRETAIRE']],
+    'rdv_edit'   => ['controller' => 'RDVController', 'method' => 'rdvEdit', 'role' => ['PATIENT', 'SECRETAIRE']],
+
 
 
     // Users
@@ -68,7 +72,12 @@ $routes = [
     'profile' => ['controller' => 'UserController', 'method' => 'profile'],
 
     // Services
-    'services' => ['controller' => 'ServiceController', 'method' => 'listServices', 'role' => 'SECRETAIRE'],
+    'services' => ['controller' => 'ServiceController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE', 'MEDECIN']],
+    'service_create' => ['controller' => 'ServiceController', 'method' => 'create', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'services_store' => ['controller' => 'ServiceController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'services_edit' => ['controller' => 'ServiceController', 'method' => 'edit',  'role' => ['ADMIN', 'SECRETAIRE']],
+    'services_update' => ['controller' => 'ServiceController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'services_delete' => ['controller' => 'ServiceController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
 
     // News
     'news' => ['controller' => 'NewsController', 'method' => 'list', 'public' => true],
@@ -121,7 +130,7 @@ if (isset($route['controller'], $route['method'])) {
     $controller = new $controllerName($pdo, $config);
 
     // Méthodes nécessitant ID
-    if (in_array($method, ['edit', 'delete', 'view', 'toggleActive'])) {
+    if (in_array($method, ['edit', 'delete', 'view', 'toggleActive', 'rdvEdit', 'rdvCancel'])) {
         $id = $_GET['id'] ?? null;
         if ($id !== null) {
             $controller->$method((int)$id);

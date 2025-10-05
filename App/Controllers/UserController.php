@@ -17,18 +17,15 @@ class UserController
     {
         $this->authController->requireRole('ADMIN'); // admin only
 
-        // Vérification du CSRF token
-        $this->authController->checkCsrfToken();
-
         // Récupérer les filtres depuis $_GET
-        $search    = $_GET['search'] ?? '';
-        $sort      = $_GET['sort'] ?? 'id';
-        $order     = strtoupper($_GET['order'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
-        $pageNum   = max(1, (int)($_GET['page_num'] ?? 1));
-        $perPage   = 10;
-        $offset    = ($pageNum - 1) * $perPage;
+        $search  = $_GET['search'] ?? '';
+        $sort    = $_GET['sort'] ?? 'id';
+        $order   = strtoupper($_GET['order'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
+        $pageNum = max(1, (int)($_GET['page_num'] ?? 1));
+        $perPage = 10;
+        $offset  = ($pageNum - 1) * $perPage;
 
-        // Récupérer les utilisateurs filtrés
+        // Récupérer les utilisateurs filtrés avec pagination
         $result = $this->userManager->findAllWithFilters($search, $sort, $order, $perPage, $offset);
 
         $users      = $result['users'];
@@ -37,6 +34,7 @@ class UserController
 
         include __DIR__ . '/../Views/users/list.php';
     }
+
 
     // Affichage d’un utilisateur (admin, médecin, secrétaire ou le patient lui-même)
     public function view(int $id): void
@@ -109,6 +107,9 @@ class UserController
         // Vérification du CSRF token
         $this->authController->checkCsrfToken();
 
+        // Récupération des rôles disponibles
+        $roles = $this->userManager->getAllRoles();
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $data = [
                 'nom'            => $_POST['nom'] ?? '',
@@ -127,7 +128,7 @@ class UserController
                 header("Location: index.php?page=users");
                 exit;
             } else {
-                $_SESSION['error'] = "Erreur lors de la création de l’utilisateur.";
+                $_SESSION['error'] = "Erreur lors de la création de l'utilisateur.";
             }
         }
 
@@ -201,8 +202,16 @@ class UserController
 
             // Seuls admin / secrétaire / médecin peuvent modifier "is_active" et "roles"
             if (in_array('ADMIN', $rolesLogged, true) || in_array('SECRETAIRE', $rolesLogged, true) || in_array('MEDECIN', $rolesLogged, true)) {
-                $data['is_active'] = isset($_POST['is_active']) ? 1 : 0;
-                $data['roles']     = $_POST['roles'] ?? [];
+
+                // 🩵 Cas 1 : si l'utilisateur édite son propre profil → on garde l'état actuel
+                if ($userLogged->getId() === $userToEdit->getId()) {
+                    $data['is_active'] = $userToEdit->isActive();
+                } else {
+                    // 🩵 Cas 2 : si l'admin/staff édite un autre compte → on prend la case du formulaire
+                    $data['is_active'] = isset($_POST['is_active']) ? 1 : 0;
+                }
+
+                $data['roles'] = $_POST['roles'] ?? [];
             }
 
             // Mot de passe modifiable uniquement si rempli
@@ -215,12 +224,26 @@ class UserController
                 $data['password'] = $_POST['password'];
                 $data['password_confirm'] = $_POST['password_confirm'];
             }
+            // Si pas d'admin ni secrétaire ni médecin → ne pas toucher aux rôles
+            if (
+                !in_array('ADMIN', $rolesLogged, true)
+                && !in_array('SECRETAIRE', $rolesLogged, true)
+                && !in_array('MEDECIN', $rolesLogged, true)
+            ) {
 
+                // on ne met pas la clé 'roles' du tout
+                unset($data['roles']);
+            }
 
             $updatedUser = $this->userManager->updateUser($userToEdit, $data);
 
             if ($updatedUser instanceof User) {
                 $_SESSION['success'] = "Profil mis à jour avec succès.";
+
+                // Si l'utilisateur modifie sa propre fiche → on met à jour la session
+                if ($userLogged->getId() === $updatedUser->getId()) {
+                    $_SESSION['user'] = $updatedUser;
+                }
 
                 // Redirections
                 if (in_array('ADMIN', $rolesLogged, true)) {

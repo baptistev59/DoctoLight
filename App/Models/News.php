@@ -7,6 +7,7 @@ class News
     private string $contenu;
     private int $created_by;
     private DateTime $created_at;
+    private ?string $image = null;
 
     public function __construct(array $data)
     {
@@ -20,6 +21,7 @@ class News
         $this->created_at = isset($data['created_at'])
             ? new \DateTime($data['created_at'])
             : new \DateTime();
+        $this->image = $data['image'] ?? null;
     }
 
     // Getters
@@ -43,6 +45,10 @@ class News
     {
         return $this->created_at->format($format);
     }
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
 
     // Setters
     public function setTitre(string $titre): void
@@ -52,5 +58,9 @@ class News
     public function setContenu(string $contenu): void
     {
         $this->contenu = $contenu;
+    }
+    public function setImage(?string $image): void
+    {
+        $this->image = $image;
     }
 }

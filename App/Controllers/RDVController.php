@@ -34,48 +34,90 @@ class RDVController
         view('rdv/list', ['rdvs' => $rdvs, 'user' => $user]);
     }
 
-    // dans RDVController.php
+    // Prépare la création ou modification de RDV
     public function create(): void
     {
         $currentUser = $_SESSION['user'];
-        // var_dump($_GET);
+        $isPatient   = $currentUser->hasRole('PATIENT');
 
-        // Récupération des patients si l'utilisateur est secrétaire
-        $patients = $currentUser->hasRole('SECRETAIRE')
-            ? $this->userManager->getUsersByRole('PATIENT')
-            : [];
+        // --- mode édition ---
+        $editId = (int)($_GET['edit_id'] ?? $_GET['id'] ?? $_POST['edit_id'] ?? 0);
 
+        $editDate  = null;
+        $editStart = null;
+        $editEnd   = null;
+        $selectedPatientName = null;
+
+        if ($editId) {
+
+            $rdv = $this->rdvManager->getRdvById($editId);
+            if ($rdv) {
+                $editDate  = $rdv->getDateRdv()->format('Y-m-d');
+                $editStart = $rdv->getHeureDebut();
+                $editEnd   = $rdv->getHeureFin();
+
+                $selectedPatientId = $rdv->getPatientId();
+                $selectedServiceId = $rdv->getServiceId();
+                $selectedStaffId   = $rdv->getStaffId();
+
+                // Nom complet du patient (utile pour secrétaire)
+                $patient = $this->userManager->findById($selectedPatientId);
+                if ($patient) {
+                    $selectedPatientName = $patient->getNom() . ' ' . $patient->getPrenom();
+                }
+            }
+        }
+
+        // --- Patients (sélection seulement pour secrétaire/admin) ---
+        if ($isPatient) {
+            $patients          = [];
+            $selectedPatientId = $currentUser->getId();
+        } else {
+            $patients = $currentUser->hasRole('SECRETAIRE')
+                ? $this->userManager->getUsersByRole('PATIENT')
+                : [];
+            if (empty($selectedPatientId)) {
+                $selectedPatientId = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : (int)($_POST['patient_id'] ?? 0);
+            }
+        }
+
+        // --- Services & médecins ---
         $services = $this->serviceManager->getAllServices();
         $staffs   = $this->userManager->getUsersByRole('MEDECIN');
-
         foreach ($staffs as $staff) {
-            // setDisplayName existe dans ta classe User
             $staff->setDisplayName($staff->getNom() . ' ' . $staff->getPrenom());
         }
 
-        // Récupération des valeurs depuis $_GET pour persistance après changement de semaine
-        $weekOffset        = (int)($_GET['week'] ?? 0);
-        $selectedServiceId = isset($_GET['service_id']) ? (int)$_GET['service_id'] : (int)($_POST['service_id'] ?? 0);
-        $selectedStaffId   = isset($_GET['staff_id'])   ? (int)$_GET['staff_id']   : (int)($_POST['staff_id'] ?? 0);
-        $selectedPatientId = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : (int)($_POST['patient_id'] ?? 0);
+        // --- Persistance navigation semaine ---
+        $weekOffset = (int)($_GET['week'] ?? 0);
 
+        if (empty($selectedServiceId)) {
+            $selectedServiceId = isset($_GET['service_id']) ? (int)$_GET['service_id'] : (int)($_POST['service_id'] ?? 0);
+        }
+        if (empty($selectedStaffId)) {
+            $selectedStaffId   = isset($_GET['staff_id']) ? (int)$_GET['staff_id'] : (int)($_POST['staff_id'] ?? 0);
+        }
+
+        // IMPORTANT : si patient connecté, on ignore tout patient_id passé en GET/POST
+        if ($isPatient) {
+            $selectedPatientId = $currentUser->getId();
+        }
+
+        // --- Semaine affichée ---
         $startOfWeek = new DateTimeImmutable("monday this week +{$weekOffset} week");
 
-        // Générer les dates de la semaine
         $datesSemaine = [];
         for ($i = 0; $i < 7; $i++) {
             $datesSemaine[] = $startOfWeek->modify("+{$i} days");
         }
 
-        $availableSlots = [];
-
+        // --- Créneaux disponibles ---
         $availableSlots = [];
         if ($selectedServiceId && $selectedStaffId) {
-            // Générer tous les créneaux pour la semaine avec dispo/non dispo
             $availableSlots = $this->generateWeekSlots($selectedStaffId, $selectedServiceId, $datesSemaine);
         }
 
-        // récupérer la durée du service sélectionné (sinon valeur par défaut 30)
+        // --- Durée du service sélectionné (par défaut 30) ---
         $dureeService = 30;
         if ($selectedServiceId) {
             $service = $this->serviceManager->getServiceById($selectedServiceId);
@@ -83,22 +125,57 @@ class RDVController
                 $dureeService = (int)$service->getDuree();
             }
         }
-        // var_dump($availableSlots);
-        // die;
+
+        // Noms jolis pour affichage
+        $selectedStaffName = '';
+        $selectedServiceName = '';
+
+        if (!empty($selectedStaffId) && !empty($staffs)) {
+            foreach ($staffs as $st) {
+                if ((int)$st->getId() === (int)$selectedStaffId) {
+                    $selectedStaffName = $st->getDisplayName();
+                    break;
+                }
+            }
+        }
+
+        if (!empty($selectedServiceId) && !empty($services)) {
+            foreach ($services as $srv) {
+                if ((int)$srv->getId() === (int)$selectedServiceId) {
+                    $selectedServiceName = $srv->getNom();
+                    break;
+                }
+            }
+        }
+
 
         view('rdv/create', [
-            'patients'          => $patients,
-            'services'          => $services,
-            'staffs'            => $staffs,
-            'availableSlots'    => $availableSlots,        // format: [ 'YYYY-mm-dd' => [ ['start'=>DateTime,'end'=>DateTime,'disponible'=>bool], ... ], ... ]
-            'selectedServiceId' => $selectedServiceId,
-            'selectedStaffId'   => $selectedStaffId,
-            'selectedPatientId' => $selectedPatientId,
-            'datesSemaine'      => $datesSemaine,
-            'weekOffset'        => $weekOffset,
-            'dureeService'      => $dureeService
+            'patients'            => $patients,
+            'services'            => $services,
+            'staffs'              => $staffs,
+            'availableSlots'      => $availableSlots,
+            'selectedServiceId'   => $selectedServiceId ?? null,
+            'selectedStaffId'     => $selectedStaffId ?? null,
+            'selectedPatientId'   => $selectedPatientId ?? null,
+            'datesSemaine'        => $datesSemaine,
+            'weekOffset'          => $weekOffset,
+            'dureeService'        => $dureeService,
+            'isPatient'           => $isPatient,
+            'currentUser'         => $currentUser,
+
+            // ajoutés
+            'editId'              => $editId,
+            'editDate'            => $editDate,
+            'editStart'           => $editStart,
+            'editEnd'             => $editEnd,
+            'selectedPatientName' => $selectedPatientName,
+            'selectedStaffName'   => $selectedStaffName,
+            'selectedServiceName' => $selectedServiceName,
         ]);
     }
+
+
+
 
 
 
@@ -186,6 +263,7 @@ class RDVController
         $staffId   = $_POST['staff_id'] ?? null;
         $dateRdv   = $_POST['date_rdv'] ?? null;
         $heureRdv  = $_POST['heure_rdv'] ?? null;
+        $editId    = !empty($_POST['edit_id']) ? (int)$_POST['edit_id'] : null; // ajout
 
         if ($currentUser->hasRole('ADMIN')) {
             $_SESSION['error'] = "Un administrateur ne peut pas prendre de rendez-vous.";
@@ -219,33 +297,45 @@ class RDVController
             redirect(BASE_URL . 'index.php?page=create_rdv');
         }
 
-        // Vérifier les conflits avec d'autres RDV
-        if ($this->rdvManager->findConflict($staffId, $start, $duration, 'staff')) {
+        // Vérifier les conflits avec d'autres RDV (en ignorant celui qu'on édite si editId)
+        if ($this->rdvManager->findConflict($staffId, $start, $duration, 'staff', $editId)) {
             $_SESSION['error'] = "Le médecin est déjà pris sur ce créneau.";
             redirect(BASE_URL . 'index.php?page=create_rdv');
         }
 
-        if ($this->rdvManager->findConflict($patientId, $start, $duration, 'patient')) {
+        if ($this->rdvManager->findConflict($patientId, $start, $duration, 'patient', $editId)) {
             $_SESSION['error'] = "Le patient a déjà un rendez-vous sur ce créneau.";
             redirect(BASE_URL . 'index.php?page=create_rdv');
         }
 
-        // Création du RDV
+        // Création ou mise à jour du RDV
         $rdv = new Rdv([
-            'patient_id'  => $patientId,
-            'staff_id'    => $staffId,
-            'service_id'  => $serviceId,
-            'date_rdv'    => $start->format('Y-m-d'),
-            'heure_debut' => $start->format('H:i:s'),
-            'heure_fin'   => $end->format('H:i:s'),
-            'statut'      => 'PROGRAMME'
+            'id'             => $editId,
+            'patient_id'     => $patientId,
+            'staff_id'       => $staffId,
+            'service_id'     => $serviceId,
+            'date_rdv'       => $start->format('Y-m-d'),
+            'heure_debut'    => $start->format('H:i:s'),
+            'heure_fin'      => $end->format('H:i:s'),
+            'statut'         => 'PROGRAMME'
         ]);
 
-        $this->rdvManager->createRdv($rdv);
+        if ($editId) {
+            $this->rdvManager->updateRdv($rdv);
+            $_SESSION['success'] = "Rendez-vous modifié avec succès.";
+        } else {
+            $this->rdvManager->createRdv($rdv);
+            $_SESSION['success'] = "Rendez-vous créé avec succès.";
+        }
 
-        $_SESSION['success'] = "Rendez-vous créé avec succès.";
-        redirect(BASE_URL . 'index.php?page=rdv');
+        // Redirection selon rôle
+        if ($currentUser->hasRole('PATIENT')) {
+            redirect(BASE_URL . 'index.php?page=rdv_listpatient');
+        } else {
+            redirect(BASE_URL . 'index.php?page=rdv');
+        }
     }
+
 
 
     private function isDisponible(DateTime $start, int $duration, array $staffDispos, array $serviceDispos): bool
@@ -459,5 +549,174 @@ class RDVController
             'selectedStaffId'   => $selectedStaffId,
             'selectedPatientId' => $selectedPatientId
         ]);
+    }
+
+    public function listPatient(): void
+    {
+        $currentUser = $_SESSION['user'] ?? null;
+
+        if (!$currentUser || !$currentUser->hasRole('PATIENT')) {
+            die("Accès interdit : seuls les patients peuvent voir leurs rendez-vous.");
+        }
+
+        // Récupération des RDV du patient connecté
+        $rdvs = $this->rdvManager->getRdvByPatient($currentUser->getId());
+
+        view('rdv/listpatient', [
+            'rdvs' => $rdvs,
+            'currentUser' => $currentUser
+        ]);
+    }
+
+    public function rdvCancel(int $rdvId): void
+    {
+        $currentUser = $_SESSION['user'] ?? null;
+        if (!$currentUser) {
+            $_SESSION['error'] = "Veuillez vous connecter.";
+            redirect(BASE_URL . 'index.php?page=login');
+        }
+
+        $rdv = $this->rdvManager->getRdvById($rdvId);
+        if (!$rdv) {
+            $_SESSION['error'] = "Rendez-vous introuvable.";
+            $this->redirectBackOr('rdv');
+            return;
+        }
+
+        $isPatient    = $currentUser->hasRole('PATIENT');
+        $isStaff      = $currentUser->hasRole('MEDECIN');
+        $isSecretaire = $currentUser->hasRole('SECRETAIRE');
+        $isAdmin      = $currentUser->hasRole('ADMIN');
+
+        // Contrôle des droits
+        if ($isPatient) {
+            if ((int)$rdv->getPatientId() !== (int)$currentUser->getId()) {
+                $_SESSION['error'] = "Ce RDV ne vous appartient pas.";
+                $this->redirectBackOr('rdv_listpatient');
+                return;
+            }
+        } elseif ($isStaff) {
+            if ((int)$rdv->getStaffId() !== (int)$currentUser->getId()) {
+                $_SESSION['error'] = "Vous ne pouvez annuler que vos propres RDV.";
+                $this->redirectBackOr('rdv');
+                return;
+            }
+        } elseif (!$isSecretaire && !$isAdmin) {
+            $_SESSION['error'] = "Accès interdit.";
+            $this->redirectBackOr('rdv');
+            return;
+        }
+
+        // Déjà annulé
+        if (strtoupper($rdv->getStatut()) === 'ANNULE') {
+            $_SESSION['success'] = "Ce RDV est déjà annulé.";
+            $this->redirectBackOr($isPatient ? 'rdv_listpatient' : 'rdv');
+            return;
+        }
+
+        // Règle des 72h pour les patients
+        if ($isPatient) {
+            $rdvStart = new DateTime(
+                $rdv->getDateRdv()->format('Y-m-d') . ' ' . $rdv->getHeureDebut()
+            );
+            $now = new DateTime();
+            $diffHours = ($rdvStart->getTimestamp() - $now->getTimestamp()) / 3600;
+
+            if ($diffHours < 72) {
+                $_SESSION['error'] = "Impossible d'annuler un RDV moins de 72h avant.";
+                $this->redirectBackOr('rdv_listpatient');
+                return;
+            }
+        }
+
+        // Mise à jour
+        $rdv->setStatut('ANNULE');
+        $this->rdvManager->updateRdv($rdv);
+
+        $_SESSION['success'] = "RDV annulé avec succès.";
+        $this->redirectBackOr($isPatient ? 'rdv_listpatient' : 'rdv');
+    }
+
+    public function rdvEdit(int $rdvId): void
+    {
+        $currentUser = $_SESSION['user'] ?? null;
+        if (!$currentUser) {
+            $_SESSION['error'] = "Veuillez vous connecter.";
+            redirect(BASE_URL . 'index.php?page=login');
+        }
+
+        $rdv = $this->rdvManager->getRdvById($rdvId);
+        if (!$rdv) {
+            $_SESSION['error'] = "Rendez-vous introuvable.";
+            $this->redirectBackOr('rdv');
+            return;
+        }
+
+        $isPatient    = $currentUser->hasRole('PATIENT');
+        $isStaff      = $currentUser->hasRole('MEDECIN');
+        $isSecretaire = $currentUser->hasRole('SECRETAIRE');
+        $isAdmin      = $currentUser->hasRole('ADMIN');
+
+        // 🔹 Contrôles d'autorisation
+        if ($isPatient) {
+            if ((int)$rdv->getPatientId() !== (int)$currentUser->getId()) {
+                $_SESSION['error'] = "Accès interdit : ce RDV ne vous appartient pas.";
+                $this->redirectBackOr('rdv_listpatient');
+                return;
+            }
+        } elseif ($isSecretaire || $isAdmin) {
+            // secrétaire/admin => OK
+        } elseif ($isStaff) {
+            if ((int)$rdv->getStaffId() !== (int)$currentUser->getId()) {
+                $_SESSION['error'] = "Accès interdit : vous ne pouvez modifier que vos RDV.";
+                $this->redirectBackOr('rdv');
+                return;
+            }
+        } else {
+            $_SESSION['error'] = "Accès interdit.";
+            $this->redirectBackOr('rdv');
+            return;
+        }
+
+        // 🔹 Règle des 72h (patients uniquement)
+        if ($isPatient) {
+            $rdvStart = new DateTime($rdv->getDateRdv()->format('Y-m-d') . ' ' . $rdv->getHeureDebut());
+            $now = new DateTime();
+            $diffHours = ($rdvStart->getTimestamp() - $now->getTimestamp()) / 3600;
+
+            if ($diffHours < 72) {
+                $_SESSION['error'] = "Impossible de modifier un RDV moins de 72h avant.";
+                $this->redirectBackOr('rdv_listpatient');
+                return;
+            }
+        }
+
+        // 🔹 Ici on affiche le formulaire d’édition (vue)
+        $services = $this->serviceManager->getAllServices();
+        $staffs   = $this->userManager->getUsersByRole('MEDECIN');
+
+        foreach ($staffs as $staff) {
+            $staff->setDisplayName($staff->getNom() . ' ' . $staff->getPrenom());
+        }
+
+        view('rdv/edit', [
+            'rdv'      => $rdv,
+            'services' => $services,
+            'staffs'   => $staffs,
+            'isPatient' => $isPatient,
+            'currentUser' => $currentUser
+        ]);
+    }
+
+    /**
+     * Petite aide pour revenir d'où on vient (sinon fallback vers une page).
+     */
+    private function redirectBackOr(string $fallbackPage): void
+    {
+        if (!empty($_SERVER['HTTP_REFERER'])) {
+            redirect($_SERVER['HTTP_REFERER']);
+        } else {
+            redirect(BASE_URL . 'index.php?page=' . $fallbackPage);
+        }
     }
 }

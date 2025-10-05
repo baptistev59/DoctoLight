@@ -47,7 +47,9 @@ CREATE TABLE user_roles (
 CREATE TABLE services (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nom VARCHAR(150) NOT NULL,
-    duree INT NOT NULL DEFAULT 30 -- durée standard d’un RDV dans ce service
+    duree INT NOT NULL DEFAULT 30, -- durée standard d’un RDV dans ces services
+    description TEXT NULL AFTER nom,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 -- ========================
@@ -95,10 +97,7 @@ CREATE TABLE rdv (
     FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE CASCADE,
     FOREIGN KEY (dispo_staff_id) REFERENCES disponibilite_staff(id) ON DELETE SET NULL,
-    FOREIGN KEY (dispo_service_id) REFERENCES disponibilite_service(id) ON DELETE SET NULL,
-
-    CONSTRAINT unique_patient_rdv UNIQUE (patient_id, date_rdv, heure_debut),
-    CONSTRAINT unique_staff_rdv   UNIQUE (staff_id, date_rdv, heure_debut)
+    FOREIGN KEY (dispo_service_id) REFERENCES disponibilite_service(id) ON DELETE SET NULL
 );
 
 -- ========================
@@ -110,6 +109,7 @@ CREATE TABLE news (
     contenu TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by INT NOT NULL,
+    image VARCHAR(255) DEFAULT NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT
 );
 

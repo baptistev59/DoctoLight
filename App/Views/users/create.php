@@ -1,116 +1,90 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<h1>Créer un rendez-vous</h1>
+<div class="container py-4">
 
-<form method="post" action="index.php?page=rdv_store" id="rdvForm">
+    <h1 class="h3 mb-4 text-primary">
+        <i class="bi bi-person-plus"></i> Créer un nouvel utilisateur
+    </h1>
 
-    <?php if (!empty($patients)): ?>
-        <label for="patient_filter">Filtrer patient :</label>
-        <input type="text" id="patient_filter" placeholder="Nom ou prénom">
-
-        <label for="patient_id">Patient :</label>
-        <select name="patient_id" id="patient_id">
-            <?php
-            usort($patients, fn($a, $b) => strcmp($a->getNom() . ' ' . $a->getPrenom(), $b->getNom() . ' ' . $b->getPrenom()));
-            foreach ($patients as $p): ?>
-                <option value="<?= $p->getId() ?>"><?= htmlspecialchars($p->getNom() . ' ' . $p->getPrenom()) ?></option>
-            <?php endforeach; ?>
-        </select>
+    <?php if (!empty($_SESSION['success'])): ?>
+        <div class="alert alert-success">
+            <?= htmlspecialchars($_SESSION['success']);
+            unset($_SESSION['success']); ?>
+        </div>
     <?php endif; ?>
 
-    <label for="service_id">Service :</label>
-    <select name="service_id" id="service_id">
-        <?php foreach ($services as $s): ?>
-            <option value="<?= $s->getId() ?>" <?= ($selectedServiceId ?? '') == $s->getId() ? 'selected' : '' ?>><?= htmlspecialchars($s->getName()) ?></option>
-        <?php endforeach; ?>
-    </select>
+    <?php if (!empty($_SESSION['error'])): ?>
+        <div class="alert alert-danger">
+            <?= htmlspecialchars($_SESSION['error']);
+            unset($_SESSION['error']); ?>
+        </div>
+    <?php endif; ?>
 
-    <label for="staff_id">Médecin :</label>
-    <select name="staff_id" id="staff_id">
-        <?php foreach ($staffs as $st): ?>
-            <option value="<?= $st->getId() ?>" <?= ($selectedStaffId ?? '') == $st->getId() ? 'selected' : '' ?>><?= htmlspecialchars($st->getDisplayName()) ?></option>
-        <?php endforeach; ?>
-    </select>
+    <form method="POST" action="">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
-    <div>
-        <button type="button" onclick="changeWeek(-1)">Semaine précédente</button>
-        <button type="button" onclick="changeWeek(1)">Semaine suivante</button>
-    </div>
+        <div class="mb-3">
+            <label for="nom" class="form-label">Nom</label>
+            <input type="text" name="nom" id="nom" class="form-control" required
+                value="<?= htmlspecialchars($_POST['nom'] ?? '') ?>">
+        </div>
 
-    <h2>Créneaux disponibles</h2>
-    <table border="1" id="slotsTable">
-        <thead>
-            <tr>
-                <th>Jour</th>
-                <th>Créneaux</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($datesSemaine as $date):
-                $dayStr = $date->format('Y-m-d');
-                $daySlots = array_filter($availableSlots ?? [], fn($slot) => $slot['start']->format('Y-m-d') === $dayStr);
-            ?>
-                <tr>
-                    <td><?= $date->format('l d/m') ?></td>
-                    <td>
-                        <?php if ($daySlots): ?>
-                            <?php foreach ($daySlots as $slot): ?>
-                                <button type="button" class="slotBtn"
-                                    data-date="<?= $slot['start']->format('Y-m-d') ?>"
-                                    data-time="<?= $slot['start']->format('H:i:s') ?>">
-                                    <?= $slot['start']->format('H:i') ?> - <?= $slot['end']->format('H:i') ?>
-                                </button>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            Aucun créneau
-                        <?php endif; ?>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+        <div class="mb-3">
+            <label for="prenom" class="form-label">Prénom</label>
+            <input type="text" name="prenom" id="prenom" class="form-control" required
+                value="<?= htmlspecialchars($_POST['prenom'] ?? '') ?>">
+        </div>
 
-    <input type="hidden" name="date_rdv" id="date_rdv">
-    <input type="hidden" name="heure_rdv" id="heure_rdv">
+        <div class="mb-3">
+            <label for="email" class="form-label">Adresse email</label>
+            <input type="email" name="email" id="email" class="form-control" required
+                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>">
+        </div>
 
-    <button type="submit">Créer le RDV</button>
-</form>
+        <div class="mb-3">
+            <label for="date_naissance" class="form-label">Date de naissance</label>
+            <input type="date" name="date_naissance" id="date_naissance" class="form-control"
+                value="<?= htmlspecialchars($_POST['date_naissance'] ?? '') ?>">
+        </div>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Filtre patient
-        const filterInput = document.getElementById('patient_filter');
-        const patientSelect = document.getElementById('patient_id');
-        filterInput.addEventListener('input', function() {
-            const filter = this.value.toLowerCase();
-            for (let i = 0; i < patientSelect.options.length; i++) {
-                const text = patientSelect.options[i].text.toLowerCase();
-                patientSelect.options[i].style.display = text.includes(filter) ? '' : 'none';
-            }
-        });
+        <div class="mb-3">
+            <label for="password" class="form-label">Mot de passe</label>
+            <input type="password" name="password" id="password" class="form-control" required>
+        </div>
 
-        // Sélection créneau
-        const slotBtns = document.querySelectorAll('.slotBtn');
-        slotBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.getElementById('date_rdv').value = this.dataset.date;
-                document.getElementById('heure_rdv').value = this.dataset.time;
+        <div class="mb-3">
+            <label for="password_confirm" class="form-label">Confirmer le mot de passe</label>
+            <input type="password" name="password_confirm" id="password_confirm" class="form-control" required>
+        </div>
 
-                // Marquer visuellement
-                slotBtns.forEach(b => b.style.backgroundColor = '');
-                this.style.backgroundColor = '#9f9';
-            });
-        });
-    });
+        <div class="mb-3">
+            <label for="roles" class="form-label">Rôles</label>
+            <div class="border rounded p-3">
+                <?php foreach ($roles as $role): ?>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="roles[]"
+                            id="role_<?= htmlspecialchars($role->getName()) ?>"
+                            value="<?= htmlspecialchars($role->getName()) ?>">
+                        <label class="form-check-label" for="role_<?= htmlspecialchars($role->getName()) ?>">
+                            <?= htmlspecialchars($role->getName()) ?>
+                        </label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
 
-    // Navigation semaine
-    function changeWeek(offset) {
-        const url = new URL(window.location.href);
-        let week = parseInt(url.searchParams.get('week') || 0);
-        week += offset;
-        url.searchParams.set('week', week);
-        window.location.href = url.toString();
-    }
-</script>
+        <div class="mb-3 form-check">
+            <input class="form-check-input" type="checkbox" name="is_active" id="is_active" checked>
+            <label class="form-check-label" for="is_active">Activer le compte</label>
+        </div>
+
+        <button type="submit" class="btn btn-success">
+            <i class="bi bi-save"></i> Enregistrer
+        </button>
+        <a href="<?= BASE_URL ?>index.php?page=users" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-arrow-left"></i> Annuler
+        </a>
+    </form>
+</div>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>
