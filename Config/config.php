@@ -15,7 +15,7 @@ if (file_exists($envFile)) {
 }
 
 return [
-    'base_url'       => $env['BASE_URL'] ?? 'http://baptistev59.alwaysdata.net/doctolight/',
+    'base_url'       => $env['BASE_URL'] ?? 'https://baptistev59.alwaysdata.net/doctolight/',
     'host'           => $env['DB_HOST'] ?? 'mysql-baptistev59.alwaysdata.net',
     'db_name'        => $env['DB_NAME'] ?? 'baptistev59_doctolight',
     'username'       => $env['DB_USER'] ?? '428185',
