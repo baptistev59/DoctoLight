@@ -3,11 +3,13 @@ class ServiceController
 {
     private ServiceManager $serviceManager;
     private AuthController $authController;
+    private DisponibiliteServiceManager $dispoServiceManager;
 
     public function __construct(PDO $pdo)
     {
         $this->serviceManager = new ServiceManager($pdo);
         $this->authController = new AuthController($pdo);
+        $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
     }
 
     // Liste des services
@@ -15,7 +17,19 @@ class ServiceController
     {
         $this->authController->requireRole(['ADMIN', 'SECRETAIRE', 'MEDECIN']);
 
-        $services = $this->serviceManager->getAllServices();
+        $pageNum = max(1, (int)($_GET['page_num'] ?? 1));
+        $perPage = 5;
+        $offset = ($pageNum - 1) * $perPage;
+
+        $search = trim($_GET['search'] ?? '');
+        $sort = $_GET['sort'] ?? 'nom';
+        $order = strtoupper($_GET['order'] ?? 'ASC');
+
+        $result = $this->serviceManager->getFilteredServices($search, $sort, $order, $perPage, $offset);
+
+        $services = $result['services'];
+        $totalPages = (int)ceil($result['totalRows'] / $perPage);
+
         include __DIR__ . '/../Views/services/list.php';
     }
 
@@ -41,8 +55,6 @@ class ServiceController
             header("Location: index.php?page=services_create");
             exit;
         }
-
-
 
         // --- Gestion de l’image ---
         $imageName = null;
@@ -103,48 +115,91 @@ class ServiceController
     // Mettre à jour
     public function update(int $id): void
     {
+        // var_dump($_FILES);
+        // exit;
+
+        // Vérification du CSRF token
         $this->authController->checkCsrfToken();
 
-        $seriveUpdated = new Service([
-            'id'          => $id,
-            'nom' => trim($_POST['nom'] ?? ''),
-            'duree' => (int)($_POST['duree'] ?? 30),
-            'description' => trim($_POST['description'] ?? ''),
-            'is_active' => isset($_POST['is_active']) ? 1 : 0
-        ]);
+        // Données principales
+        $nom = trim($_POST['nom'] ?? '');
+        $duree = (int)($_POST['duree'] ?? 30);
+        $description = trim($_POST['description'] ?? '');
+        $is_active = isset($_POST['is_active']) ? 1 : 0;
 
-        // Gestion d’image (nouvelle image)
+        // on récupère le service à modifier
+        $service = $this->serviceManager->getServiceById($id);
+        if (!$service) {
+            $_SESSION['error'] = "Service introuvable.";
+            header("Location: index.php?page=services");
+            exit;
+        }
+
+        // Vérification image (si nouvelle image uploadée)
+        $imageName = $service->getImage(); // image actuelle par défaut
+
+        // Si une nouvelle image a été envoyée
+        // echo '<pre>';
+        // var_dump($_FILES);
+        // echo '</pre>';
+        // exit;
         if (!empty($_FILES['new_image']['name'])) {
-            $targetDir = __DIR__ . '/../../Public/uploads/services/';
-            if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+            // var_dump($_FILES['new_image']);
+            // exit;
 
-            $ext = pathinfo($_FILES['new_image']['name'], PATHINFO_EXTENSION);
-            $filename = uniqid('srv_') . '.' . strtolower($ext);
-            $targetFile = $targetDir . $filename;
-
-            // Supprime l’ancienne image si elle existe
-            if ($seriveUpdated->getImage() && file_exists($targetDir . $seriveUpdated->getImage())) {
-                unlink($targetDir . $seriveUpdated->getImage());
+            $uploadDir = __DIR__ . '/../../Public/uploads/services/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
             }
 
-            if (move_uploaded_file($_FILES['new_image']['tmp_name'], $targetFile)) {
-                $seriveUpdated->setImage($filename);
+            $ext = strtolower(pathinfo($_FILES['new_image']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+            $newImage = uniqid('news_') . '.' . strtolower($ext);
+
+            if (!in_array($ext, $allowed)) {
+                $_SESSION['error'] = "Format d'image non valide (JPG, PNG, WEBP uniquement).";
+                header("Location: index.php?page=services_edit&id=$id");
+                exit;
+            }
+
+            $newImage = uniqid('news_') . '.' . strtolower($ext);
+
+            if (move_uploaded_file($_FILES['new_image']['tmp_name'], $uploadDir . $newImage)) {
+                // Supprime l’ancienne image si elle existe
+                if ($imageName && file_exists($uploadDir . $imageName)) {
+                    unlink($uploadDir . $imageName);
+                }
+                $imageName = $newImage;
+            } else {
+                $_SESSION['error'] = "Erreur lors de l'upload de l'image.";
+                header("Location: index.php?page=services_edit&id=$id");
+                exit;
             }
         }
 
-        if ($this->serviceManager->updateService($seriveUpdated)) {
+        $service->setNom($nom);
+        $service->setDescription($description);
+        $service->setDuree($duree);
+        $service->setActive($is_active);
+        $service->setImage($imageName);
+
+        if ($this->serviceManager->updateService($service)) {
             $_SESSION['success'] = "Service mis à jour avec succès.";
+            header("Location: index.php?page=services");
+            exit;
         } else {
             $_SESSION['error'] = "Erreur lors de la mise à jour du service.";
+            header("Location: index.php?page=services_edit&id=$id");
+            exit;
         }
-        header("Location: index.php?page=services");
-        exit;
     }
 
     // Suppression
     public function delete(int $id): void
     {
+        // Vérification du CSRF token
         $this->authController->checkCsrfToken();
+
         $service = $this->serviceManager->getServiceById($id);
 
         if ($this->serviceManager->deleteService($id)) {
@@ -160,6 +215,61 @@ class ServiceController
         } else {
             $_SESSION['error'] = "Erreur lors de la suppression du service.";
         }
+        header("Location: index.php?page=services");
+        exit;
+    }
+
+    public function show(int $id): void
+    {
+        // Récupération du service
+        $service = $this->serviceManager->getServiceById($id);
+
+        if (!$service) {
+            $_SESSION['error'] = "Service introuvable.";
+            header("Location: index.php?page=services");
+            exit;
+        }
+
+        // Récupération des disponibilités associées
+        $dispos = $this->dispoServiceManager->getDisponibilitesByService($id);
+
+        $joursOrdre = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+
+        usort($dispos, function ($a, $b) use ($joursOrdre) {
+            $posA = array_search($a->getJourSemaine(), $joursOrdre);
+            $posB = array_search($b->getJourSemaine(), $joursOrdre);
+
+            if ($posA === $posB) {
+                return $a->getStartTime() <=> $b->getStartTime();
+            }
+            return $posA <=> $posB;
+        });
+
+        // Rendre disponible les infos de l'utilisateur connecté
+        $currentUser = $_SESSION['user'] ?? null;
+        $currentRoles = $currentUser ? $currentUser->getRoles() : [];
+
+        include __DIR__ . '/../Views/services/show.php';
+    }
+
+    public function toggleActive(int $id): void
+    {
+        $this->authController->checkCsrfToken();
+        $this->authController->requireRole(['ADMIN', 'SECRETAIRE']);
+
+        $service = $this->serviceManager->getServiceById($id);
+        if (!$service) {
+            $_SESSION['error'] = "Service introuvable.";
+            header("Location: index.php?page=services");
+            exit;
+        }
+
+        $newStatus = !$service->isActive();
+        $service->setActive($newStatus);
+
+        $this->serviceManager->updateService($service);
+
+        $_SESSION['success'] = "Le service « {$service->getNom()} » a été " . ($newStatus ? "activé" : "désactivé") . ".";
         header("Location: index.php?page=services");
         exit;
     }

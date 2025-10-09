@@ -4,12 +4,14 @@ class UserController
     private PDO $pdo;
     private UserManager $userManager;
     private AuthController $authController;
+    private DisponibiliteStaffManager $dispoStaffManager;
 
     public function __construct(PDO $pdo, array $config)
     {
         $this->pdo = $pdo;
         $this->userManager = new UserManager($pdo, $config);
         $this->authController = new AuthController($pdo);
+        $this->dispoStaffManager = new DisponibiliteStaffManager($pdo);
     }
 
     // Liste des utilisateurs (admin uniquement) avec recherche, tri et pagination
@@ -55,6 +57,7 @@ class UserController
             exit;
         }
 
+        // Récupérer l'utilisateur à afficher
         $userToView = $this->userManager->findById($id);
         if (!$userToView) {
             header("HTTP/1.0 404 Not Found");
@@ -66,6 +69,24 @@ class UserController
         $roles = [];
         if ($isAdminOrStaff) {
             $roles = $this->userManager->getAllRoles();
+        }
+
+        // Charger les disponibilités uniquement si le user affiché est un médecin
+        $dispos = [];
+        if ($userToView->hasRole(['MEDECIN'])) {
+
+            $dispos = $this->dispoStaffManager->getDisponibilitesByStaff($userToView->getId());
+            $joursOrdre = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+
+            usort($dispos, function ($a, $b) use ($joursOrdre) {
+                $posA = array_search($a->getJourSemaine(), $joursOrdre);
+                $posB = array_search($b->getJourSemaine(), $joursOrdre);
+
+                if ($posA === $posB) {
+                    return $a->getStartTime() <=> $b->getStartTime();
+                }
+                return $posA <=> $posB;
+            });
         }
 
         include __DIR__ . '/../Views/users/profile.php';

@@ -25,8 +25,8 @@ class NewsManager
         return $newsList;
     }
 
-    // Récupérer un certains nombre de news. Limite à 5 news si aucun paramètre n'est donné
-    public function getLatest($limit = 5)
+    // Récupérer un certains nombre de news. Limite à 6 news si aucun paramètre n'est donné
+    public function getLatest($limit = 6)
     {
         $limit = (int)$limit; // cast obligatoire en entier pour la sécurité (injection SQL)
         $sql = "SELECT * FROM news ORDER BY created_at DESC LIMIT $limit";
@@ -112,7 +112,7 @@ class NewsManager
     }
 
     // Liste des news avec pagination
-    public function findAllWithPagination(int $limit = 5, int $offset = 0): array
+    public function findAllWithPagination(int $limit = 6, int $offset = 0): array
     {
         $stmt = $this->pdo->prepare("
         SELECT * FROM news

@@ -58,7 +58,7 @@ class DisponibiliteStaffManager
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            return new DisponibiliteStaff($row['id'], $row['user_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
+            return new DisponibiliteStaff($row['id'], $row['user_id'], new DateTime($row['start_time']), new DateTime($row['end_time']), $row['jour_semaine']);
         }
         return null;
     }

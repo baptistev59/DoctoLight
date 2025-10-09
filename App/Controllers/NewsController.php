@@ -18,7 +18,7 @@ class NewsController
     {
         // Récupération de la page actuelle
         $pageNum = max(1, (int)($_GET['page_num'] ?? 1));
-        $perPage = 5; // nombre d’articles par page
+        $perPage = 6; // nombre d’articles par page
         $offset = ($pageNum - 1) * $perPage;
 
         // Récupération des actualités paginées
@@ -54,8 +54,8 @@ class NewsController
         include __DIR__ . '/../Views/news/shows.php';
     }
 
-    // Affiche les 5 dernères news
-    public function getLatestNews($limit = 5): array
+    // Affiche les 9 dernères news
+    public function getLatestNews($limit = 6): array
     {
         return $this->newsManager->getLatest($limit);
     }
@@ -130,23 +130,42 @@ class NewsController
         $id = intval($_GET['id']);
         $titre = trim($_POST['titre']);
         $contenu = trim($_POST['contenu']);
+
         $news = $this->newsManager->getNewsById($id);
         $imageName = $news->getImage();
 
-        if (!$news) die("Acyualité non trouvée !");
+        if (!$news) {
+            $_SESSION['error'] = "Actualité introuvable.";
+            header("Location: index.php?page=news");
+            exit;
+        }
 
         if (!empty($_FILES['image']['name'])) {
             $uploadDir = __DIR__ . '/../../Public/uploads/news/';
             if (!is_dir($uploadDir)) mkdir($uploadDir, 0775, true);
 
-            $ext = pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION);
+            $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+
+
+            if (!in_array($ext, $allowed)) {
+                $_SESSION['error'] = "Format d'image non valide (JPG, PNG, WEBP uniquement).";
+                header("Location: index.php?page=services_edit&id=$id");
+                exit;
+            }
+
             $newImage = uniqid('news_') . '.' . strtolower($ext);
 
             if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadDir . $newImage)) {
+                // Supprime l’ancienne image si elle existe
                 if ($imageName && file_exists($uploadDir . $imageName)) {
                     unlink($uploadDir . $imageName);
                 }
                 $imageName = $newImage;
+            } else {
+                $_SESSION['error'] = "Erreur lors de l'upload de l'image.";
+                header("Location: index.php?page=news_edit&id=$id");
+                exit;
             }
         }
 
@@ -167,7 +186,7 @@ class NewsController
         // Vérification du CSRF token
         $this->authController->checkCsrfToken();
 
-        $id = intval($_POST['id'] ?? 0);
+        $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
         if ($id && $this->newsManager->deleteNews($id)) {
             header("Location: index.php?page=news&success=deleted");
         } else {

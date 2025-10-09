@@ -31,7 +31,7 @@
         <!-- Description -->
         <div class="mb-3">
             <label for="description" class="form-label fw-semibold">Description</label>
-            <textarea id="description" name="description" rows="6" class="form-control"
+            <textarea id="description" name="description" rows="6" class="form-control rich-text"
                 placeholder="Décrivez le service proposé..."></textarea>
         </div>
 

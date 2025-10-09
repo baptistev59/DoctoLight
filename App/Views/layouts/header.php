@@ -11,7 +11,32 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- TinyMCE -->
+    <!-- Calcul dynamique de la version CSS (timestamp basé sur la dernière modification) -->
+    <?php
+    $stylePath = __DIR__ . '/../../Public/css/style.css';
+    $version = file_exists($stylePath) ? filemtime($stylePath) : time();
+    ?>
+    <link rel="stylesheet" href="<?= BASE_URL ?>css/style.css?v=<?= $version ?>">
+
+    <!-- Place the first <script> tag in your HTML's <head> -->
+    <script src="https://cdn.tiny.cloud/1/v7mkx9uc5az8ogwj4gkxn3hjg3jqs2wiqxauqdkwuyrpf7qj/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            tinymce.init({
+                selector: 'textarea.rich-text', // toutes les zones avec cette classe
+                plugins: 'advlist autolink lists link image charmap preview anchor ' +
+                    'searchreplace visualblocks code fullscreen insertdatetime media table help wordcount',
+                toolbar: 'undo redo | formatselect | bold italic backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | removeformat | help',
+                menubar: false,
+                height: 300,
+                branding: false,
+                language: 'fr_FR'
+            });
+        });
+    </script>
+
 
 </head>
 
@@ -32,6 +57,8 @@
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php">Accueil</a></li>
                     <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=news">Actualités</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=apropos">À propos</a></li>
+
 
                     <?php
                     $currentUser = $_SESSION['user'] ?? null;
@@ -57,22 +84,24 @@
                         // Liens par rôle
                         $menuLinks = [
                             'ADMIN' => [
-                                'Administration'   => BASE_URL . 'index.php?page=users',
-                                'Services'         => BASE_URL . 'index.php?page=services',
+                                'Administration' => BASE_URL . 'index.php?page=users',
+                                'Services' => BASE_URL . 'index.php?page=services',
+                                'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
                             ],
                             'SECRETAIRE' => [
-                                'Tableau de bord'  => BASE_URL . 'index.php?page=dashboard',
-                                'Prendre RDV'      => BASE_URL . 'index.php?page=create_rdv',
-                                'Liste RDV'        => BASE_URL . 'index.php?page=rdv',
-                                'Services'         => BASE_URL . 'index.php?page=services',
+                                'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
+                                'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
+                                'Liste RDV' => BASE_URL . 'index.php?page=rdv',
+                                'Services' => BASE_URL . 'index.php?page=services',
+                                'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
                             ],
                             'MEDECIN' => [
-                                'Tableau de bord'  => BASE_URL . 'index.php?page=dashboard',
-                                'Liste RDV'        => BASE_URL . 'index.php?page=rdv',
+                                'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
+                                'Liste RDV' => BASE_URL . 'index.php?page=rdv',
                             ],
                             'PATIENT' => [
-                                'Prendre RDV'      => BASE_URL . 'index.php?page=create_rdv',
-                                'Mes RDV'          => BASE_URL . 'index.php?page=rdv_listpatient',
+                                'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
+                                'Mes RDV' => BASE_URL . 'index.php?page=rdv_listpatient',
                             ],
                         ];
 

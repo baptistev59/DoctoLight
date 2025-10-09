@@ -1,0 +1,23 @@
+// Import des partials
+@import "variables";
+@import "buttons";
+@import "header";
+@import "footer";
+@import "cards";
+@import "layout";
+@import "forms";
+@import "images";
+
+body {
+  font-family: "Poppins", sans-serif;
+  background-color: #f9fbfd;
+  color: #333;
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3 {
+  color: $primary-color;
+  font-weight: 600;
+}

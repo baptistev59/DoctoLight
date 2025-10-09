@@ -1,0 +1,21 @@
+header.navbar {
+  background-color: #fff;
+  box-shadow: $shadow;
+  padding: 1rem 2rem;
+
+  .navbar-brand {
+    font-weight: 700;
+    color: $primary-color;
+    font-size: 1.4rem;
+  }
+
+  .nav-link {
+    color: $dark-gray;
+    margin-right: 1rem;
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: $primary-color;
+    }
+  }
+}

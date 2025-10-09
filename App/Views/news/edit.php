@@ -13,7 +13,7 @@
 
         <div class="mb-3">
             <label for="contenu" class="form-label fw-semibold">Contenu</label>
-            <textarea id="contenu" name="contenu" rows="8" class="form-control" required><?= htmlspecialchars($news->getContenu()); ?></textarea>
+            <textarea id="contenu" name="contenu" rows="8" class="form-control rich-text" required><?= $news->getContenu(); ?></textarea>
         </div>
 
         <!-- Aperçu de l’image actuelle -->
@@ -21,8 +21,7 @@
             <div class="text-center mb-4">
                 <img src="<?= BASE_URL ?>uploads/news/<?= htmlspecialchars($news->getImage()); ?>"
                     alt="Illustration de l'actualité"
-                    class="img-fluid rounded shadow-sm"
-                    style="max-height: 400px; object-fit: cover;">
+                    class="rounded shadow-sm news-image">
             </div>
         <?php endif; ?>
 

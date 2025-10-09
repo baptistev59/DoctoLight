@@ -174,6 +174,7 @@
             <button type="submit" id="submitBtn" class="btn btn-primary" <?= empty($editId) ? 'disabled' : '' ?>>
                 <?= !empty($editId) ? "Modifier le rendez-vous" : "Créer le rendez-vous" ?>
             </button>
+
         </div>
     </form>
 </div>

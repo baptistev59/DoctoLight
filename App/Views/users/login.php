@@ -1,7 +1,7 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <div class="card shadow-sm p-4" style="max-width: 420px; width: 100%;">
+    <div class="card form-card">
         <div class="text-center mb-4">
             <i class="bi bi-person-circle text-primary" style="font-size: 3rem;"></i>
             <h2 class="mt-2 text-primary">Connexion</h2>

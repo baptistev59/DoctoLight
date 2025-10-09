@@ -100,6 +100,7 @@
         </div>
     <?php endif; ?>
 
+
     <!-- Boutons d'action -->
     <div class="mt-4">
         <?php if ($currentUser && $currentUser->getId() === $userToView->getId()): ?>
@@ -134,7 +135,14 @@
                 </button>
             </form>
         <?php endif; ?>
+
     </div>
+    <?php if ($userToView->hasRole(['MEDECIN'])): ?>
+        <?php
+        $staff = $userToView;
+        include __DIR__ . '/../disponibilites/_staff_list.php';
+        ?>
+    <?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>

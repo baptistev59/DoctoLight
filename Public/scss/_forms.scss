@@ -1,0 +1,35 @@
+/* 🎨 Styles pour les formulaires (login / register / edit) */
+
+.form-card {
+  max-width: 480px;
+  width: 100%;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  padding: 2rem;
+  background: #fff;
+}
+
+.form-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.form-login {
+  color: $primary-color;
+}
+
+.form-register {
+  color: #28a745; // vert succès
+}
+
+.form-buttons {
+  margin-top: 15px;
+
+  button {
+    margin-right: 10px;
+  }
+
+  a {
+    margin-left: 10px;
+  }
+}

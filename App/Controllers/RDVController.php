@@ -148,7 +148,6 @@ class RDVController
             }
         }
 
-
         view('rdv/create', [
             'patients'            => $patients,
             'services'            => $services,
@@ -162,8 +161,6 @@ class RDVController
             'dureeService'        => $dureeService,
             'isPatient'           => $isPatient,
             'currentUser'         => $currentUser,
-
-            // ajoutés
             'editId'              => $editId,
             'editDate'            => $editDate,
             'editStart'           => $editStart,
@@ -223,37 +220,6 @@ class RDVController
         ]);
     }
 
-    private function generateSlots(string $date, int $duration, array $staffDispos, array $serviceDispos): array
-    {
-        $slots = [];
-
-        // On part du début de journée (08:00 par ex) jusqu’à la fin (18:00 par ex)
-        // → tu pourras ajuster selon ton besoin (ou récupérer depuis la config/service)
-        $dayStart = new DateTime($date . ' 08:00');
-        $dayEnd   = new DateTime($date . ' 18:00');
-
-        $current = clone $dayStart;
-
-        while ($current < $dayEnd) {
-            $end = (clone $current)->modify("+{$duration} minutes");
-
-            // Vérifie si créneau dispo avec intersection Staff + Service
-            $isFree = $this->isDisponible($current, $duration, $staffDispos, $serviceDispos);
-
-            $slots[] = [
-                'start'   => clone $current,
-                'end'     => clone $end,
-                'free'    => $isFree
-            ];
-
-            // On avance au créneau suivant
-            $current->modify("+{$duration} minutes");
-        }
-
-        return $slots;
-    }
-
-
     public function store(): void
     {
         $currentUser = $_SESSION['user'];
@@ -263,7 +229,9 @@ class RDVController
         $staffId   = $_POST['staff_id'] ?? null;
         $dateRdv   = $_POST['date_rdv'] ?? null;
         $heureRdv  = $_POST['heure_rdv'] ?? null;
-        $editId    = !empty($_POST['edit_id']) ? (int)$_POST['edit_id'] : null; // ajout
+        $editId    = !empty($_POST['edit_id']) ? (int)$_POST['edit_id'] : null;
+
+
 
         if ($currentUser->hasRole('ADMIN')) {
             $_SESSION['error'] = "Un administrateur ne peut pas prendre de rendez-vous.";
@@ -307,6 +275,8 @@ class RDVController
             $_SESSION['error'] = "Le patient a déjà un rendez-vous sur ce créneau.";
             redirect(BASE_URL . 'index.php?page=create_rdv');
         }
+
+
 
         // Création ou mise à jour du RDV
         $rdv = new Rdv([

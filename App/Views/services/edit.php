@@ -35,7 +35,7 @@
         <!-- Description -->
         <div class="mb-3">
             <label for="description" class="form-label fw-semibold">Description</label>
-            <textarea id="description" name="description" rows="6" class="form-control"><?= htmlspecialchars($service->getDescription()); ?></textarea>
+            <textarea id="description" name="description" rows="6" class="form-control rich-text"><?= $service->getDescription(); ?></textarea>
         </div>
 
         <!-- Image -->
@@ -45,8 +45,7 @@
                 <div class="mb-3">
                     <img src="<?= BASE_URL ?>uploads/services/<?= htmlspecialchars($service->getImage()); ?>"
                         alt="Image du service"
-                        class="img-fluid rounded border"
-                        style="max-height: 200px;">
+                        class="img-fluid service-image">
                 </div>
             <?php else: ?>
                 <p class="text-muted">Aucune image disponible pour ce service.</p>

@@ -19,7 +19,7 @@
 
         <div class="mb-3">
             <label for="contenu" class="form-label fw-semibold">Contenu</label>
-            <textarea id="contenu" name="contenu" rows="8" class="form-control" required></textarea>
+            <textarea id="contenu" name="contenu" rows="8" class="form-control rich-text" required></textarea>
         </div>
 
         <div class="mb-3">

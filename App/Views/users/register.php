@@ -1,7 +1,7 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
 <div class="container d-flex justify-content-center align-items-center" style="min-height: 90vh;">
-    <div class="card shadow-sm p-4" style="max-width: 480px; width: 100%;">
+    <div class="card form-card">
         <div class="text-center mb-4">
             <i class="bi bi-person-plus text-success" style="font-size: 3rem;"></i>
             <h2 class="mt-2 text-success">Inscription</h2>

@@ -58,7 +58,7 @@ class DisponibiliteServiceManager
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            return new DisponibiliteService($row['id'], $row['service_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
+            return new DisponibiliteService($row['id'], $row['service_id'], new DateTime($row['start_time']), new DateTime($row['end_time']), $row['jour_semaine']);
         }
         return null;
     }

@@ -34,21 +34,23 @@ $routes = [
     'home' => [
         'view' => 'home',
         'public' => true,
-        'data' => fn($pdo) => ['news' => (new NewsController($pdo, $config))->getLatestNews(5)]
+        'data' => fn($pdo) => [
+            'news' => (new NewsController($pdo, $config))->getLatestNews(5),
+            'services' => (new ServiceManager($pdo))->getActiveServices()
+        ]
     ],
-    // page de test
+    // page de test Vue simple
     'test_view' => [
         'view' => 'test',
         'public' => true,
         'data' => fn($pdo) => ['message' => 'Hello World!']
     ],
 
-    // page de redirection
-    'test-redirect' => [
-        'controller' => 'AuthController',
-        'method' => 'login',
-        'public' => true
-    ],
+    // page de Test de redirection
+    'test-redirect' => ['controller' => 'AuthController', 'method' => 'login', 'public' => true],
+
+    // À propos
+    'apropos' => ['view' => 'about', 'public' => true],
 
     // RDV
     'rdv' => ['controller' => 'RDVController', 'method' => 'planning', 'role' => ['MEDECIN', 'SECRETAIRE']],
@@ -68,7 +70,6 @@ $routes = [
     'users_delete' => ['controller' => 'UserController', 'method' => 'delete', 'role' => 'ADMIN'],
     'users_view' => ['controller' => 'UserController', 'method' => 'view'],
     'users_toggle' => ['controller' => 'UserController', 'method' => 'toggleActive', 'role' => 'ADMIN'],
-
     'profile' => ['controller' => 'UserController', 'method' => 'profile'],
 
     // Services
@@ -78,6 +79,9 @@ $routes = [
     'services_edit' => ['controller' => 'ServiceController', 'method' => 'edit',  'role' => ['ADMIN', 'SECRETAIRE']],
     'services_update' => ['controller' => 'ServiceController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE']],
     'services_delete' => ['controller' => 'ServiceController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'services_toggle'  => ['controller' => 'ServiceController', 'method' => 'toggleActive', 'role' => ['SECRETAIRE', 'ADMIN']],
+    'service_show' => ['controller' => 'ServiceController', 'method' => 'show', 'public' => true],
+
 
     // News
     'news' => ['controller' => 'NewsController', 'method' => 'list', 'public' => true],
@@ -93,6 +97,23 @@ $routes = [
     'logout' => ['controller' => 'AuthController', 'method' => 'logout', 'public' => true],
     'register' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
     'register-valid' => ['controller' => 'AuthController', 'method' => 'register', 'public' => true],
+
+    // Disponibilités Services
+    'dispo_services' => ['controller' => 'DisponibiliteServiceController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_service_create' => ['controller' => 'DisponibiliteServiceController', 'method' => 'create', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_service_store'  => ['controller' => 'DisponibiliteServiceController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_service_edit'   => ['controller' => 'DisponibiliteServiceController', 'method' => 'edit', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_service_update' => ['controller' => 'DisponibiliteServiceController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_service_delete' => ['controller' => 'DisponibiliteServiceController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
+
+
+    // DISPONIBILITÉS STAFF
+
+    'dispo_staff_list' => ['controller' => 'DisponibiliteStaffController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_staff_store' => ['controller' => 'DisponibiliteStaffController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_staff_update' => ['controller' => 'DisponibiliteStaffController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_staff_delete' => ['controller' => 'DisponibiliteStaffController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
+
 ];
 
 // Page demandée
@@ -106,6 +127,7 @@ $route = $routes[$page];
 
 // Vérification accès
 $isPublic = $route['public'] ?? false;
+
 if (!$isPublic && !$auth->isLoggedIn()) {
     redirect(BASE_URL . 'index.php?page=login');
 }
@@ -130,7 +152,8 @@ if (isset($route['controller'], $route['method'])) {
     $controller = new $controllerName($pdo, $config);
 
     // Méthodes nécessitant ID
-    if (in_array($method, ['edit', 'delete', 'view', 'toggleActive', 'rdvEdit', 'rdvCancel'])) {
+    $methodsRequiringId = ['edit', 'delete', 'view', 'toggleActive', 'rdvEdit', 'rdvCancel', 'show', 'update'];
+    if (in_array($method, $methodsRequiringId, true)) {
         $id = $_GET['id'] ?? null;
         if ($id !== null) {
             $controller->$method((int)$id);

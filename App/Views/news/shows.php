@@ -1,31 +1,26 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<div class="container py-5">
+<div class="news-container">
 
     <!-- Titre de l’actualité -->
-    <h2 class="text-primary mb-4 border-bottom pb-2">
-        <?= htmlspecialchars($news->getTitre()); ?>
-    </h2>
+    <h2><?= htmlspecialchars($news->getTitre()); ?></h2>
 
     <!-- Image principale -->
     <?php if ($news->getImage()): ?>
-        <div class="text-center mb-4">
+        <div class="news-image">
             <img src="<?= BASE_URL ?>uploads/news/<?= htmlspecialchars($news->getImage()) ?>"
                 alt="Illustration de l'actualité"
-                class="img-fluid rounded shadow-sm"
-                style="max-height: 400px; object-fit: cover;">
+                class="img-fluid">
         </div>
     <?php endif; ?>
 
     <!-- Contenu de la news -->
-    <div class="mb-4">
-        <p class="fs-5 text-justify">
-            <?= nl2br($news->getContenu()); ?>
-        </p>
+    <div class="news-content">
+        <?= nl2br($news->getContenu()); ?>
     </div>
 
     <!-- Auteur et date -->
-    <p class="text-muted small mb-5">
+    <div class="news-meta">
         <i class="bi bi-person-circle"></i>
         Créé par :
         <?php if ($author): ?>
@@ -35,14 +30,13 @@
         <?php endif; ?>
         — <i class="bi bi-calendar3"></i>
         publié le <?= htmlspecialchars($news->getCreatedAt('d/m/Y à H:i')); ?>
-    </p>
+    </div>
 
     <!-- Actions -->
-    <div class="d-flex flex-wrap gap-2 align-items-center mb-4">
-        <?php
-        if (isset($currentUser) && isset($currentRoles)) {
-            $currentHighestRole = $currentUser->getHighestRole();
-            if (in_array($currentHighestRole, ["ADMIN", "SECRETAIRE"])): ?>
+    <div class="news-actions">
+        <?php if (isset($currentUser) && isset($currentRoles)): ?>
+            <?php $currentHighestRole = $currentUser->getHighestRole(); ?>
+            <?php if (in_array($currentHighestRole, ["ADMIN", "SECRETAIRE"])): ?>
                 <a href="index.php?page=edit-news&id=<?= $news->getId(); ?>"
                     class="btn btn-warning btn-sm">
                     <i class="bi bi-pencil-square"></i> Éditer
@@ -52,8 +46,8 @@
                     onclick="return confirm('Voulez-vous vraiment supprimer cette actualité ?');">
                     <i class="bi bi-trash"></i> Supprimer
                 </a>
-        <?php endif;
-        } ?>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <a href="index.php?page=news" class="btn btn-outline-secondary btn-sm ms-auto">
             <i class="bi bi-arrow-left"></i> Retour à la liste
@@ -61,7 +55,7 @@
     </div>
 
     <!-- Navigation entre actualités -->
-    <div class="d-flex justify-content-between mt-4">
+    <div class="news-navigation">
         <?php if (!empty($previousId)): ?>
             <a href="index.php?page=news_show&id=<?= $previousId; ?>"
                 class="btn btn-outline-primary">
@@ -78,6 +72,7 @@
             </a>
         <?php endif; ?>
     </div>
+
 </div>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>
