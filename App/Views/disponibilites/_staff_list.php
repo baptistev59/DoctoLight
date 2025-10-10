@@ -4,7 +4,10 @@
     </h4>
 
     <!-- Bouton d’ajout -->
-    <?php if ($currentUser && $currentUser->hasRole(['ADMIN', 'SECRETAIRE'])): ?>
+    <?php if (
+        $currentUser && ($currentUser->hasRole(['ADMIN', 'SECRETAIRE'])
+            || ($currentUser->hasRole('MEDECIN') && $currentUser->getId() === $userToView->getId()))
+    ): ?>
         <button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#addStaffDispoModal">
             <i class="bi bi-plus-circle"></i> Ajouter une disponibilité
         </button>
@@ -28,7 +31,10 @@
                         <th>Jour</th>
                         <th>Début</th>
                         <th>Fin</th>
-                        <?php if ($currentUser && $currentUser->hasRole(['ADMIN', 'SECRETAIRE'])): ?>
+                        <?php if (
+                            $currentUser && ($currentUser->hasRole(['ADMIN', 'SECRETAIRE'])
+                                || ($currentUser->hasRole('MEDECIN') && $currentUser->getId() === $userToView->getId()))
+                        ): ?>
                             <th class="text-center">Actions</th>
                         <?php endif; ?>
                     </tr>
@@ -40,7 +46,10 @@
                             <td><?= htmlspecialchars($dispo->getStartTime()->format('H:i')); ?></td>
                             <td><?= htmlspecialchars($dispo->getEndTime()->format('H:i')); ?></td>
 
-                            <?php if ($currentUser && $currentUser->hasRole(['ADMIN', 'SECRETAIRE'])): ?>
+                            <?php if (
+                                $currentUser && ($currentUser->hasRole(['ADMIN', 'SECRETAIRE'])
+                                    || ($currentUser->hasRole('MEDECIN') && $currentUser->getId() === $userToView->getId()))
+                            ): ?>
                                 <td class="text-center">
                                     <!-- Bouton d’édition -->
                                     <button class="btn btn-sm btn-warning"

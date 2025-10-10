@@ -111,7 +111,7 @@ $routes = [
 
     'dispo_staff_list' => ['controller' => 'DisponibiliteStaffController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE']],
     'dispo_staff_store' => ['controller' => 'DisponibiliteStaffController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
-    'dispo_staff_update' => ['controller' => 'DisponibiliteStaffController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'dispo_staff_update' => ['controller' => 'DisponibiliteStaffController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE', 'MEDECIN']],
     'dispo_staff_delete' => ['controller' => 'DisponibiliteStaffController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
 
 ];

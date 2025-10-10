@@ -32,8 +32,8 @@ class DisponibiliteStaffManager
                 WHERE id = :id";
         $params = [
             ':user_id'   => $dispo->getStaffId(),
-            ':start_time' => $dispo->getStartTime(),
-            ':end_time'   => $dispo->getEndTime(),
+            ':start_time' => $dispo->getStartTime()->format('Y-m-d H:i:s'),
+            ':end_time'   => $dispo->getEndTime()->format('Y-m-d H:i:s'),
             ':id'         => $dispo->getId(),
             ':jour_semaine' => $dispo->getJourSemaine()
         ];

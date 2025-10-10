@@ -13,7 +13,7 @@ class DisponibiliteStaffController
         $this->authController = new AuthController($pdo);
     }
 
-    // Liste des disponibilités
+    // Liste des disponibilités (admin et secrétaire uniquement)
     public function list(): void
     {
         $this->authController->requireRole(['ADMIN', 'SECRETAIRE']);
@@ -27,10 +27,25 @@ class DisponibiliteStaffController
     {
         $this->authController->checkCsrfToken();
 
+        $currentUser = $_SESSION['user'] ?? null;
+        if (!$currentUser) {
+            $_SESSION['error'] = "Session expirée.";
+            header("Location: index.php?page=login");
+            exit;
+        }
+
+
         $staffId = intval($_POST['user_id'] ?? 0);
         $jour = strtoupper(trim($_POST['jour_semaine'] ?? ''));
         $start = new DateTime($_POST['start_time']);
         $end = new DateTime($_POST['end_time']);
+
+        // Le médecin ne peut créer que ses propres disponibilités
+        if ($currentUser->hasRole('MEDECIN') && $currentUser->getId() !== $staffId) {
+            $_SESSION['error'] = "Action non autorisée.";
+            header("Location: index.php?page=profile");
+            exit;
+        }
 
         if ($start >= $end) {
             $_SESSION['error'] = "L'heure de fin doit être après celle de début.";
@@ -51,17 +66,36 @@ class DisponibiliteStaffController
     {
         $this->authController->checkCsrfToken();
 
+        $currentUser = $_SESSION['user'] ?? null;
         $dispo = $this->dispoManager->getDisponibiliteById($id);
+
         if (!$dispo) {
             $_SESSION['error'] = "Disponibilité introuvable.";
             header("Location: index.php?page=staff");
             exit;
         }
 
+        // Le médecin ne peut modifier que ses propres disponibilités
+        if ($currentUser->hasRole('MEDECIN') && $currentUser->getId() !== $dispo->getStaffId()) {
+            $_SESSION['error'] = "Action non autorisée.";
+            header("Location: index.php?page=profile");
+            exit;
+        }
+
+        $jour = strtoupper(trim($_POST['jour_semaine'] ?? ''));
+        $start = new DateTime($_POST['start_time']);
+        $end = new DateTime($_POST['end_time']);
+
+        if ($start >= $end) {
+            $_SESSION['error'] = "L'heure de fin doit être après celle de début.";
+            header("Location: index.php?page=profile&id=" . $dispo->getStaffId());
+            exit;
+        }
+
         $userId = intval($_POST['user_id'] ?? 0);
-        $dispo->setJourSemaine($_POST['jour_semaine']);
-        $dispo->setStartTime(new DateTime($_POST['start_time']));
-        $dispo->setEndTime(new DateTime($_POST['end_time']));
+        $dispo->setJourSemaine($jour);
+        $dispo->setStartTime($start);
+        $dispo->setEndTime($end);
         $dispo->setStaffId($userId);
 
         $this->dispoManager->updateDisponibilite($dispo);
@@ -76,15 +110,25 @@ class DisponibiliteStaffController
     {
         $this->authController->checkCsrfToken();
 
+        $currentUser = $_SESSION['user'] ?? null;
         $dispo = $this->dispoManager->getDisponibiliteById($id);
-        if ($dispo) {
-            $this->dispoManager->deleteDisponibilite($id);
-            $_SESSION['success'] = "Disponibilité supprimée.";
-            header("Location: index.php?page=profile&id=" . $dispo->getStaffId());
+
+        if (!$dispo) {
+            $_SESSION['error'] = "Disponibilité introuvable.";
+            header("Location: index.php?page=staff");
             exit;
         }
-        $_SESSION['error'] = "Disponibilité introuvable.";
-        header("Location: index.php?page=staff");
+
+        // Le médecin ne peut supprimer que ses propres disponibilités
+        if ($currentUser->hasRole('MEDECIN') && $currentUser->getId() !== $dispo->getStaffId()) {
+            $_SESSION['error'] = "Action non autorisée.";
+            header("Location: index.php?page=profile");
+            exit;
+        }
+
+        $this->dispoManager->deleteDisponibilite($id);
+        $_SESSION['success'] = "Disponibilité supprimée avec succès.";
+        header("Location: index.php?page=profile&id=" . $dispo->getStaffId());
         exit;
     }
 }

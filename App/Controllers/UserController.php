@@ -328,9 +328,9 @@ class UserController
             header('Location: ' . BASE_URL . 'index.php?page=login');
             exit;
         }
+
         // On résupère le User connecté
         $currentUser = $_SESSION['user'];
-
 
         // Cas 1 : si un ID est passé en paramètre ET que l’utilisateur est admin/staff
         $id = $_GET['id'] ?? null;
@@ -347,6 +347,21 @@ class UserController
         } else {
             // Cas 2 : pas d’ID → affiche son propre profil
             $userToView = $currentUser;
+        }
+        // Charger les disponibilités si c’est un médecin
+        $dispos = [];
+        if ($userToView->hasRole(['MEDECIN'])) {
+            $dispos = $this->dispoStaffManager->getDisponibilitesByStaff($userToView->getId());
+
+            // Tri par jour (lundi → dimanche) puis par heure
+            $joursOrdre = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+            usort($dispos, function ($a, $b) use ($joursOrdre) {
+                $posA = array_search($a->getJourSemaine(), $joursOrdre);
+                $posB = array_search($b->getJourSemaine(), $joursOrdre);
+                return ($posA === $posB)
+                    ? ($a->getStartTime() <=> $b->getStartTime())
+                    : ($posA <=> $posB);
+            });
         }
 
         include __DIR__ . '/../Views/users/profile.php';
