@@ -11,21 +11,25 @@
 
         <div class="row g-3 align-items-end">
             <div class="col-md-4 col-lg-3">
-                <label for="staff_id" class="form-label">Médecin :</label>
-                <select name="staff_id" id="staff_id" class="form-select">
-                    <option value="">-- Tous --</option>
-                    <?php foreach ($staffs as $st): ?>
-                        <option value="<?= $st->getId() ?>" <?= ($selectedStaffId ?? '') == $st->getId() ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($st->getDisplayName()) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <?php if ($currentUser->hasRole('MEDECIN')): ?>
+                    <input type="hidden" name="staff_id" value="<?= htmlspecialchars($selectedStaffId) ?>">
+                <?php else: ?>
+                    <label for="staff_id" class="form-label">Médecin :</label>
+                    <select name="staff_id" id="staff_id" class="form-select">
+                        <option value="">-- Tous les médecins --</option>
+                        <?php foreach ($staffs as $st): ?>
+                            <option value="<?= $st->getId() ?>" <?= ($selectedStaffId ?? '') == $st->getId() ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($st->getDisplayName()) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                <?php endif; ?>
             </div>
 
             <div class="col-md-4 col-lg-3">
                 <label for="service_id" class="form-label">Service :</label>
                 <select name="service_id" id="service_id" class="form-select">
-                    <option value="">-- Tous --</option>
+                    <option value="">-- Tous les services --</option>
                     <?php foreach ($services as $s): ?>
                         <option value="<?= $s->getId() ?>" <?= ($selectedServiceId ?? '') == $s->getId() ? 'selected' : '' ?>>
                             <?= htmlspecialchars($s->getNom()) ?>
@@ -37,7 +41,7 @@
             <div class="col-md-4 col-lg-3">
                 <label for="patient_id" class="form-label">Patient :</label>
                 <select name="patient_id" id="patient_id" class="form-select">
-                    <option value="">-- Tous --</option>
+                    <option value="">-- Tous les patients --</option>
                     <?php foreach ($patients as $p): ?>
                         <option value="<?= $p->getId() ?>" <?= ($selectedPatientId ?? '') == $p->getId() ? 'selected' : '' ?>>
                             <?= htmlspecialchars($p->getNom() . ' ' . $p->getPrenom()) ?>
@@ -73,9 +77,9 @@
     <!-- Rappel des filtres sélectionnés -->
     <h4 class="text-secondary mb-3">
         <i class="bi bi-calendar-range"></i> Planning
-        <?php if (!empty($selectedStaffId)): ?>
+        <?php if (!empty($selectedStaffName)): ?>
             — <span class="fw-semibold text-dark">Médecin :</span>
-            <?= htmlspecialchars($staffs[array_search($selectedStaffId, array_column($staffs, 'id'))]->getDisplayName()) ?>
+            <?= htmlspecialchars($selectedStaffName); ?>
         <?php endif; ?>
         <?php if (!empty($selectedServiceId)): ?>
             — <span class="fw-semibold text-dark">Service :</span>

@@ -171,11 +171,6 @@ class RDVController
         ]);
     }
 
-
-
-
-
-
     public function createValid(): void
     {
         $currentUser = $_SESSION['user'];
@@ -457,11 +452,22 @@ class RDVController
 
     public function planning(): void
     {
+        $currentUser = $_SESSION['user'] ?? null;
+        if (!$currentUser) {
+            header('Location: ' . BASE_URL . 'index.php?page=login');
+            exit;
+        }
+
         // --- Filtres (optionnels) ---
         $selectedStaffId   = isset($_GET['staff_id'])   && $_GET['staff_id']   !== '' ? (int)$_GET['staff_id']   : null;
         $selectedServiceId = isset($_GET['service_id']) && $_GET['service_id'] !== '' ? (int)$_GET['service_id'] : null;
         $selectedPatientId = isset($_GET['patient_id']) && $_GET['patient_id'] !== '' ? (int)$_GET['patient_id'] : null;
         $weekOffset        = (int)($_GET['week'] ?? 0);
+
+        // --- Si le médecin est connecté, on force le filtre sur son propre ID ---
+        if ($currentUser->hasRole('MEDECIN')) {
+            $selectedStaffId = $currentUser->getId();
+        }
 
         // --- Semaine courante (lundi -> dimanche) ---
         $startOfWeek = new DateTimeImmutable("monday this week +{$weekOffset} week");
@@ -507,6 +513,16 @@ class RDVController
             }
         }
 
+        $selectedStaffName = '';
+        if ($selectedStaffId) {
+            foreach ($staffs as $st) {
+                if ((int)$st->getId() === (int)$selectedStaffId) {
+                    $selectedStaffName = $st->getNom() . ' ' . $st->getPrenom();
+                    break;
+                }
+            }
+        }
+
         // Envoi à la vue
         view('rdv/list', [
             'datesSemaine'      => $datesSemaine,
@@ -517,7 +533,9 @@ class RDVController
             'patients'          => $patients,
             'selectedServiceId' => $selectedServiceId,
             'selectedStaffId'   => $selectedStaffId,
-            'selectedPatientId' => $selectedPatientId
+            'selectedStaffName' => $selectedStaffName,
+            'selectedPatientId' => $selectedPatientId,
+            'currentUser'       => $currentUser
         ]);
     }
 

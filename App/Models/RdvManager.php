@@ -17,14 +17,14 @@ class RdvManager
                         AND date_rdv = :date 
                         AND heure_debut = :heure 
                         AND statut != 'ANNULE'";
-        $stmt = $this->pdo->prepare($sqlCheckPatient);
-        $stmt->execute([
+        $request = $this->pdo->prepare($sqlCheckPatient);
+        $request->execute([
             ':pid'   => $rdv->getPatientId(),
             ':date'  => $rdv->getDateRdv()->format('Y-m-d'),
             ':heure' => $rdv->getHeureDebut()
         ]);
 
-        if ($stmt->fetchColumn() > 0) {
+        if ($request->fetchColumn() > 0) {
             throw new Exception("Ce patient a déjà un RDV actif à cette heure.");
         }
 
@@ -34,14 +34,14 @@ class RdvManager
                       AND date_rdv = :date 
                       AND heure_debut = :heure 
                       AND statut != 'ANNULE'";
-        $stmt = $this->pdo->prepare($sqlCheckStaff);
-        $stmt->execute([
+        $request = $this->pdo->prepare($sqlCheckStaff);
+        $request->execute([
             ':sid'   => $rdv->getStaffId(),
             ':date'  => $rdv->getDateRdv()->format('Y-m-d'),
             ':heure' => $rdv->getHeureDebut()
         ]);
 
-        if ($stmt->fetchColumn() > 0) {
+        if ($request->fetchColumn() > 0) {
             throw new Exception("Le médecin a déjà un RDV actif à cette heure.");
         }
 
@@ -67,10 +67,10 @@ class RdvManager
             ':statut'           => $rdv->getStatut()
         ];
 
-        $stmt = $this->pdo->prepare($sql);
+        $request = $this->pdo->prepare($sql);
 
         try {
-            return $stmt->execute($params);
+            return $request->execute($params);
         } catch (PDOException $e) {
             // Capture propre si la contrainte SQL est encore violée
             if ($e->getCode() === '23000') {
@@ -143,8 +143,8 @@ class RdvManager
     public function updateStatut(int $rdvId, string $statut): bool
     {
         $sql = "UPDATE rdv SET statut = :statut WHERE id = :id";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
+        $request = $this->pdo->prepare($sql);
+        return $request->execute([
             ':statut' => $statut,
             ':id'     => $rdvId
         ]);
@@ -221,7 +221,7 @@ class RdvManager
             $sql .= " AND id != :excludeId";
         }
 
-        $stmt = $this->pdo->prepare($sql);
+        $request = $this->pdo->prepare($sql);
 
         $params = [
             ':id'       => $entityId,
@@ -233,9 +233,9 @@ class RdvManager
             $params[':excludeId'] = $excludeId;
         }
 
-        $stmt->execute($params);
+        $request->execute($params);
 
-        return $stmt->fetchColumn() > 0;
+        return $request->fetchColumn() > 0;
     }
 
 
@@ -267,9 +267,9 @@ class RdvManager
         // 🔹 Récupérer les RDV existants non annulés pour la journée
         $sql = "SELECT heure_debut, heure_fin FROM rdv 
             WHERE date_rdv = :date AND statut != 'ANNULE'";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':date' => $date]);
-        $rdvOccupes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $request = $this->pdo->prepare($sql);
+        $request->execute([':date' => $date]);
+        $rdvOccupes = $request->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($staffDayDispos as $s) {
             foreach ($serviceDayDispos as $d) {
@@ -305,11 +305,10 @@ class RdvManager
 
 
     // RDV de la semaine avec détails (noms patient / staff / service).
-    public function getRdvForWeekDetailed(DateTimeInterface $start, DateTimeInterface $end, ?int $staffId, ?int $serviceId, ?int $patientId): array
+    public function getRdvForWeekDetailed(DateTimeInterface $start, DateTimeInterface $end, ?int $staffId = null, ?int $serviceId = null, ?int $patientId = null): array
     {
         $sql = "SELECT
-                r.id, r.patient_id, r.staff_id, r.service_id,
-                r.date_rdv, r.heure_debut, r.heure_fin, r.statut,
+                r.*, 
                 up.nom  AS patient_nom,
                 up.prenom AS patient_prenom,
                 us.nom  AS staff_nom,
@@ -319,31 +318,31 @@ class RdvManager
             JOIN users up ON up.id = r.patient_id
             JOIN users us ON us.id = r.staff_id
             JOIN services s ON s.id = r.service_id
-            WHERE r.date_rdv BETWEEN :d1 AND :d2";
+            WHERE r.date_rdv BETWEEN :start AND :end";
 
         $params = [
-            ':d1' => $start->format('Y-m-d'),
-            ':d2' => $end->format('Y-m-d'),
+            ':start' => $start->format('Y-m-d'),
+            ':end' => $end->format('Y-m-d'),
         ];
 
-        if ($staffId !== null) {
+        if (!empty($staffId)) {
             $sql .= " AND r.staff_id = :staff_id";
             $params[':staff_id'] = $staffId;
         }
-        if ($serviceId !== null) {
+        if (!empty($serviceId)) {
             $sql .= " AND r.service_id = :service_id";
             $params[':service_id'] = $serviceId;
         }
-        if ($patientId !== null) {
+        if (!empty($patientId)) {
             $sql .= " AND r.patient_id = :patient_id";
             $params[':patient_id'] = $patientId;
         }
 
         $sql .= " ORDER BY r.date_rdv ASC, r.heure_debut ASC";
 
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        $request = $this->pdo->prepare($sql);
+        $request->execute($params);
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $request->fetchAll(PDO::FETCH_ASSOC);
     }
 }
