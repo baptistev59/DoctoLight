@@ -115,4 +115,70 @@ class DisponibiliteServiceController
         header("Location: index.php?page=service_show&id=$serviceId");
         exit;
     }
+
+    // Calcule les horaires d'ouverture du cabinet
+    public function horairesCabinet(): void
+    {
+        // Récupère tous les services actifs
+        $services = $this->serviceManager->getAllServices();
+        // Calcule les horaires en fonction des disponibilités des services actifs
+        $horaires = $this->calculerHorairesCabinet();
+
+        include __DIR__ . '/../Views/home.php';
+    }
+
+    /**
+     * Calcule les horaires d'ouverture du cabinet
+     * avec gestion des coupures (matin / après-midi)
+     */
+    private function calculerHorairesCabinet(): array
+    {
+        $jours = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+        $horaires = [];
+
+        foreach ($jours as $jour) {
+            $dispos = $this->dispoManager->getAllDisponibilitesByJour($jour);
+
+            if (empty($dispos)) {
+                $horaires[$jour] = [];
+                continue;
+            }
+
+            // Trie par heure de début
+            usort($dispos, fn($a, $b) => $a->getStartTime() <=> $b->getStartTime());
+
+            $merged = [];
+            $current = [
+                'start' => $dispos[0]->getStartTime(),
+                'end'   => $dispos[0]->getEndTime()
+            ];
+
+            foreach ($dispos as $d) {
+                $start = $d->getStartTime();
+                $end   = $d->getEndTime();
+
+                // Si chevauchement ou créneau continue
+                if ($start <= $current['end']) {
+                    if ($end > $current['end']) {
+                        $current['end'] = $end;
+                    }
+                } else {
+                    // Nouveau bloc horaire
+                    $merged[] = $current;
+                    $current = ['start' => $start, 'end' => $end];
+                }
+            }
+
+            // Ajoute le dernier bloc
+            $merged[] = $current;
+
+            // Stocke pour ce jour
+            $horaires[$jour] = array_map(fn($m) => [
+                'open'  => $m['start']->format('H:i'),
+                'close' => $m['end']->format('H:i')
+            ], $merged);
+        }
+
+        return $horaires;
+    }
 }

@@ -122,4 +122,30 @@ class DisponibiliteServiceManager
         }
         return $dispos;
     }
+
+    public function getAllDisponibilitesByJour(string $jour): array
+    {
+        $sql = "SELECT ds.* FROM disponibilite_service ds
+            JOIN services s ON ds.service_id = s.id
+            WHERE ds.jour_semaine = :jour
+              AND s.is_active = 1";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':jour' => $jour]);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $dispos = [];
+
+        foreach ($rows as $row) {
+            $dispos[] = new DisponibiliteService(
+                $row['id'],
+                $row['service_id'],
+                new DateTime($row['start_time']),
+                new DateTime($row['end_time']),
+                $row['jour_semaine']
+            );
+        }
+
+        return $dispos;
+    }
 }

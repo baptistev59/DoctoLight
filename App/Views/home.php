@@ -89,44 +89,24 @@
                 <thead class="table-light">
                     <tr>
                         <th>Jour</th>
-                        <th>Matin</th>
-                        <th>Après-midi</th>
+                        <th>Horaires</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Lundi</td>
-                        <td>08h30 - 12h30</td>
-                        <td>14h00 - 18h00</td>
-                    </tr>
-                    <tr>
-                        <td>Mardi</td>
-                        <td>08h30 - 12h30</td>
-                        <td>14h00 - 18h00</td>
-                    </tr>
-                    <tr>
-                        <td>Mercredi</td>
-                        <td>08h30 - 12h30</td>
-                        <td>14h00 - 17h00</td>
-                    </tr>
-                    <tr>
-                        <td>Jeudi</td>
-                        <td>08h30 - 12h30</td>
-                        <td>14h00 - 18h00</td>
-                    </tr>
-                    <tr>
-                        <td>Vendredi</td>
-                        <td>08h30 - 12h30</td>
-                        <td>Fermé</td>
-                    </tr>
-                    <tr class="table-secondary">
-                        <td>Samedi</td>
-                        <td colspan="2">Fermé</td>
-                    </tr>
-                    <tr class="table-secondary">
-                        <td>Dimanche</td>
-                        <td colspan="2">Fermé</td>
-                    </tr>
+                    <?php foreach ($horaires as $jour => $plages): ?>
+                        <tr class="<?= empty($plages) ? 'table-secondary' : '' ?>">
+                            <td><?= ucfirst(strtolower($jour)) ?></td>
+                            <?php if (!empty($plages)): ?>
+                                <td>
+                                    <?php foreach ($plages as $p): ?>
+                                        <div><?= htmlspecialchars($p['open']) ?> - <?= htmlspecialchars($p['close']) ?></div>
+                                    <?php endforeach; ?>
+                                </td>
+                            <?php else: ?>
+                                <td>Fermé</td>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
