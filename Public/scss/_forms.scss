@@ -1,35 +1,39 @@
-/* 🎨 Styles pour les formulaires (login / register / edit) */
+/* Styles pour les formulaires (login / register / edit) */
+@use "sass:map";
+@use "variables";
 
 .form-card {
   max-width: 480px;
   width: 100%;
-  border-radius: $radius;
-  box-shadow: $shadow;
+  border-radius: variables.$radius;
+  box-shadow: variables.$shadow;
   padding: 2rem;
   background: #fff;
+  margin: 0 auto;
+
+  @media (max-width: #{map.get(variables.$bp, md)}) {
+    padding: 1.5rem;
+  }
 }
 
-.form-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
+.form-control,
+.form-select {
+  min-height: 42px;
+  font-size: 1rem;
 
-.form-login {
-  color: $primary-color;
+  @media (max-width: #{map.get(variables.$bp, md)}) {
+    font-size: 0.95rem;
+  }
 }
-
-.form-register {
-  color: #28a745; // vert succès
-}
-
 .form-buttons {
   margin-top: 15px;
 
-  button {
-    margin-right: 10px;
-  }
-
+  button,
   a {
-    margin-left: 10px;
+    margin: 0.25rem;
+    @media (max-width: #{map.get(variables.$bp, md)}) {
+      width: 100%;
+      display: block;
+    }
   }
 }

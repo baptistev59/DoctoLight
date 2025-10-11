@@ -117,6 +117,11 @@ $routes = [
     // Ouverture Cabinet
     'home' => ['controller' => 'DisponibiliteServiceController', 'method' => 'horairesCabinet', 'public' => true],
 
+    // Fermeture exceptionnelle
+    'fermetures'        => ['controller' => 'FermetureController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'fermeture_store'   => ['controller' => 'FermetureController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
+    'fermeture_delete'  => ['controller' => 'FermetureController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
+
 
 ];
 

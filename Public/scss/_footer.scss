@@ -1,17 +1,22 @@
+@use "sass:map";
+@use "variables";
+
 footer {
-  background-color: $light-gray;
-  color: $dark-gray;
-  padding: 2rem 0;
+  background-color: variables.$primary-color;
+  color: #fff;
   text-align: center;
-  font-size: 0.9rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 0;
 
-  a {
-    color: $primary-color;
-    text-decoration: none;
+  p {
+    margin-bottom: 0.5rem;
+  }
 
-    &:hover {
-      text-decoration: underline;
-    }
+  small {
+    display: block;
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: #{map.get(variables.$bp, md)}) {
+    font-size: 1rem;
   }
 }

@@ -1,0 +1,38 @@
+@use "variables";
+
+/* === Typographie === */
+body {
+  font-family: "Poppins", sans-serif;
+  font-size: 1rem;
+  color: #333;
+  line-height: 1.7;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  color: variables.$primary-color;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+p,
+.lead,
+.card-text {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #444;
+}
+
+/* Centrer sur mobile uniquement */
+@media (max-width: 767px) {
+  h1,
+  h2,
+  h3,
+  p,
+  .lead {
+    text-align: center;
+  }
+}

@@ -1,21 +1,30 @@
+@use "sass:map";
+@use "variables";
+
 header.navbar {
-  background-color: #fff;
-  box-shadow: $shadow;
-  padding: 1rem 2rem;
+  background-color: variables.$primary-color;
+  box-shadow: variables.$shadow;
 
   .navbar-brand {
     font-weight: 700;
-    color: $primary-color;
-    font-size: 1.4rem;
+    color: #fff;
+    font-size: 1.5rem;
   }
 
   .nav-link {
-    color: $dark-gray;
-    margin-right: 1rem;
-    transition: color 0.2s ease;
+    color: #fff;
+    margin-right: 0.5rem;
+    transition: 0.2s;
 
     &:hover {
-      color: $primary-color;
+      text-decoration: underline;
+    }
+  }
+
+  @media (max-width: #{map.get(variables.$bp, md)}) {
+    .nav-link {
+      text-align: center;
+      margin: 0.3rem 0;
     }
   }
 }

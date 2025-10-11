@@ -1,0 +1,21 @@
+@use "sass:map";
+@use "variables";
+
+/* === Breakpoints alignés sur Bootstrap === */
+@mixin up($key) {
+  $size: map.get(variables.$bp, $key);
+  @if $size != null {
+    @media (min-width: #{$size}) {
+      @content;
+    }
+  }
+}
+
+@mixin down($key) {
+  $size: map.get(variables.$bp, $key);
+  @if $size != null {
+    @media (max-width: calc(#{$size} - 0.02px)) {
+      @content;
+    }
+  }
+}

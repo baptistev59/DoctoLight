@@ -1,0 +1,27 @@
+@use "variables";
+
+@mixin fluid-type($min, $max, $minvw: 320px, $maxvw: 1200px) {
+  font-size: clamp(
+    #{$min},
+    calc(
+      #{$min} + (#{strip-unit($max - $min)} * ((100vw - #{$minvw}) / #{strip-unit(
+                  $maxvw - $minvw
+                )}))
+    ),
+    #{$max}
+  );
+}
+
+@mixin fluid-space($prop, $min, $max) {
+  #{$prop}: clamp(
+    #{$min},
+    calc(#{$min} + (#{strip-unit($max - $min)} * ((100vw - 320px) / 880))),
+    #{$max}
+  );
+}
+
+.img-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

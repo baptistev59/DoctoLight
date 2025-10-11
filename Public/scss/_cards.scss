@@ -1,177 +1,39 @@
-.service-card {
-  border: none;
-  border-radius: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  background-color: #fff;
+@use "variables";
+
+.card {
+  border-radius: variables.$radius;
   overflow: hidden;
-
-  &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.2);
-  }
-
-  img {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-bottom: 3px solid $primary-color;
-  }
-
-  .card-body {
-    padding: 1.5rem;
-    text-align: center;
-  }
-
-  .card-title {
-    font-weight: 600;
-    color: $primary-color;
-    margin-bottom: 0.5rem;
-  }
-
-  .card-text {
-    font-size: 0.95rem;
-    color: #555;
-  }
-
-  .btn {
-    border-radius: 25px;
-    margin-top: 1rem;
-  }
-
-  h5 {
-    color: #1976d2;
-    font-weight: 600;
-  }
-}
-
-.team-card {
+  box-shadow: variables.$shadow;
   border: none;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
 
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 18px rgba(33, 150, 243, 0.2);
-  }
-
   img {
-    height: 220px;
+    height: 200px;
     object-fit: cover;
-    width: 100%;
-  }
-}
-
-/* Encadré de rendez-vous */
-.rdv-cell {
-  min-width: 200px;
-
-  .slot {
-    border-radius: 10px;
-    padding: 0.5rem;
-    margin-bottom: 0.5rem;
-
-    &.PROGRAMME {
-      background-color: #d4edda;
-      border: 1px solid #28a745;
-    }
-    &.TERMINE {
-      background-color: #d1ecf1;
-      border: 1px solid #17a2b8;
-    }
-    &.ANNULE {
-      background-color: #f8f9fa;
-      color: #6c757d;
-      border: 1px solid #ced4da;
-      text-decoration: line-through;
-    }
-  }
-}
-.news-content {
-  font-size: 1.15rem;
-  line-height: 1.8;
-  color: #333;
-  text-align: justify;
-
-  p {
-    margin-bottom: 1.2rem;
-  }
-}
-
-/* === Cartes d'actualités === */
-.news-card {
-  border: none;
-  border-radius: 15px;
-  overflow: hidden;
-  background-color: #fff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-
-  &:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 8px 20px rgba(25, 118, 210, 0.2);
-  }
-
-  .card-img-top.news-thumb {
-    height: 180px;
-    object-fit: cover;
-    border-bottom: 3px solid $primary-color;
   }
 
   .card-body {
-    padding: 1.3rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
+    text-align: center;
 
-  .card-title {
-    font-weight: 600;
-    font-size: 1.1rem;
-    color: #212529;
-    margin-bottom: 0.5rem;
+    .card-title {
+      color: variables.$primary-color;
+      font-weight: 600;
+    }
 
-    a {
-      text-decoration: none;
-      color: inherit;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: $primary-color;
-      }
+    .card-text {
+      color: #555;
+      font-size: 1rem;
+      line-height: 1.7;
+      text-align: justify;
     }
   }
 
-  small {
-    color: #777;
-    font-size: 0.85rem;
-    i {
-      color: $primary-color;
-    }
-  }
-
-  .card-text {
-    font-size: 0.95rem;
-    color: #555;
-    margin-top: 0.5rem;
-    flex-grow: 1;
+  .card-footer {
+    background: transparent;
+    border: none;
   }
 
   .btn {
     border-radius: 25px;
-  }
-}
-
-/* Version responsive (pour espacement et équilibre visuel) */
-@media (min-width: 768px) {
-  .news-card .card-img-top.news-thumb {
-    height: 200px;
-  }
-}
-@media (min-width: 1200px) {
-  .news-card .card-img-top.news-thumb {
-    height: 220px;
   }
 }

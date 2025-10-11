@@ -1,0 +1,51 @@
+@use "variables";
+@use "breakpoints";
+
+.table-responsive-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table--stacked-xs {
+  @include breakpoints.down(md) {
+    display: block;
+    width: 100%;
+    thead {
+      display: none;
+    }
+    tbody {
+      display: block;
+    }
+    tr {
+      display: block;
+      margin-bottom: 1rem;
+    }
+    td {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      border-top: 1px solid var(--bs-border-color);
+    }
+    td::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: var(--bs-secondary-color);
+    }
+  }
+}
+
+/* Planning RDV : première colonne sticky (heure) */
+.planning-table {
+  th,
+  td {
+    vertical-align: middle;
+  }
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+    border-right: 1px solid var(--bs-border-color);
+  }
+}

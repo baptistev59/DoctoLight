@@ -15,6 +15,8 @@ D:.
 ¦   ¦       AuthController.php
 ¦   ¦       DisponibiliteServiceController.php
 ¦   ¦       DisponibiliteStaffController.php
+¦   ¦       FermetureController.php
+¦   ¦       HomeController.php
 ¦   ¦       NewsController.php
 ¦   ¦       RDVController.php
 ¦   ¦       ServiceController.php
@@ -25,6 +27,7 @@ D:.
 ¦   ¦       DisponibiliteServiceManager.php
 ¦   ¦       DisponibiliteStaff.php
 ¦   ¦       DisponibiliteStaffManager.php
+¦   ¦       FermetureManager.php
 ¦   ¦       News.php
 ¦   ¦       NewsManager.php
 ¦   ¦       Rdv.php
@@ -46,6 +49,9 @@ D:.
 ¦       ¦       _modal_dispo.php
 ¦       ¦       _service_list.php
 ¦       ¦       _staff_list.php
+¦       ¦       
+¦       +---fermetures
+¦       ¦       list.php
 ¦       ¦       
 ¦       +---layouts
 ¦       ¦       footer.php
@@ -109,6 +115,7 @@ D:.
 ¦   ¦       main.css
 ¦   ¦       main.css.map
 ¦   ¦       main.scss
+¦   ¦       _breakpoints.scss
 ¦   ¦       _buttons.scss
 ¦   ¦       _cards.scss
 ¦   ¦       _footer.scss
@@ -116,6 +123,9 @@ D:.
 ¦   ¦       _header.scss
 ¦   ¦       _images.scss
 ¦   ¦       _layout.scss
+¦   ¦       _mixins.scss
+¦   ¦       _tables.scss
+¦   ¦       _typography.scss
 ¦   ¦       _variables.scss
 ¦   ¦       
 ¦   +---uploads
@@ -124,6 +134,9 @@ D:.
 ¦       ¦       news_68e2a779775b4.jpg
 ¦       ¦       news_68e2a7ca59d3b.jpg
 ¦       ¦       news_68e2a7f971b5d.jpg
+¦       ¦       news_68e54e3dcde7b.jpg
+¦       ¦       news_68e54e5bda747.jpg
+¦       ¦       news_68e54e6ddf8fd.jpg
 ¦       ¦       
 ¦       +---services
 ¦               appareil_orthodontique.jpg

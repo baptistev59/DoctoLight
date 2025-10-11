@@ -1,15 +1,20 @@
-// Import des partials
-@import "variables";
-@import "buttons";
-@import "header";
-@import "footer";
-@import "cards";
-@import "layout";
-@import "forms";
-@import "images";
+@use "sass:color";
+@use "variables";
+@use "breakpoints";
+@use "mixins";
+@use "typography";
+@use "layout";
+@use "cards";
+@use "buttons";
+@use "header";
+@use "footer";
+@use "forms";
+@use "images";
+@use "tables";
 
+// Styles globaux
 body {
-  font-family: "Poppins", sans-serif;
+  font-family: variables.$font-family;
   background-color: #f9fbfd;
   color: #333;
   line-height: 1.6;
@@ -18,6 +23,6 @@ body {
 h1,
 h2,
 h3 {
-  color: $primary-color;
+  color: variables.$primary-color;
   font-weight: 600;
 }

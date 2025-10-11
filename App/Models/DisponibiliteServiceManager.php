@@ -32,8 +32,8 @@ class DisponibiliteServiceManager
                 WHERE id = :id";
         $params = [
             ':service_id' => $dispo->getServiceId(),
-            ':start_time' => $dispo->getStartTime(),
-            ':end_time'   => $dispo->getEndTime(),
+            ':start_time' => $dispo->getStartTime()->format('Y-m-d H:i:s'),
+            ':end_time'   => $dispo->getEndTime()->format('Y-m-d H:i:s'),
             ':id'         => $dispo->getId(),
             ':jour_semaine' => $dispo->getJourSemaine()
         ];
@@ -58,7 +58,13 @@ class DisponibiliteServiceManager
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($row) {
-            return new DisponibiliteService($row['id'], $row['service_id'], new DateTime($row['start_time']), new DateTime($row['end_time']), $row['jour_semaine']);
+            return new DisponibiliteService(
+                $row['id'],
+                $row['service_id'],
+                new DateTime($row['start_time']),
+                new DateTime($row['end_time']),
+                $row['jour_semaine']
+            );
         }
         return null;
     }
@@ -71,7 +77,13 @@ class DisponibiliteServiceManager
         $dispos = [];
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $dispos[] = new DisponibiliteService($row['id'], $row['service_id'], $row['start_time'], $row['end_time'], $row['jour_semaine']);
+            $dispos[] = new DisponibiliteService(
+                $row['id'],
+                $row['service_id'],
+                new DateTime($row['start_time']),
+                new DateTime($row['end_time']),
+                $row['jour_semaine']
+            );
         }
 
         return $dispos;

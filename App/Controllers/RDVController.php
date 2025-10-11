@@ -271,7 +271,16 @@ class RDVController
             redirect(BASE_URL . 'index.php?page=create_rdv');
         }
 
+        // Vérifie s’il existe une fermeture pendant ce jour
+        $fermetureManager = new FermetureManager($this->pdo);
+        $fermetures = $fermetureManager->getActive();
 
+        foreach ($fermetures as $f) {
+            if ($dateRdv >= $f['date_debut'] && $dateRdv <= $f['date_fin']) {
+                $_SESSION['error'] = "Le cabinet est fermé du {$f['date_debut']} au {$f['date_fin']} ({$f['motif']}).";
+                redirect(BASE_URL . 'index.php?page=create_rdv');
+            }
+        }
 
         // Création ou mise à jour du RDV
         $rdv = new Rdv([

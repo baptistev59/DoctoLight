@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DoctoLight</title>
 
     <!-- Bootstrap CSS -->
@@ -11,12 +12,7 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
-    <!-- Calcul dynamique de la version CSS (timestamp basé sur la dernière modification) -->
-    <?php
-    $stylePath = __DIR__ . '/../../Public/css/style.css';
-    $version = file_exists($stylePath) ? filemtime($stylePath) : time();
-    ?>
-    <link rel="stylesheet" href="<?= BASE_URL ?>css/style.css?v=<?= $version ?>">
+    <link href="<?= BASE_URL ?>css/style.css" rel="stylesheet">
 
     <!-- Place the first <script> tag in your HTML's <head> -->
     <script src="https://cdn.tiny.cloud/1/v7mkx9uc5az8ogwj4gkxn3hjg3jqs2wiqxauqdkwuyrpf7qj/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
@@ -87,6 +83,7 @@
                                 'Administration' => BASE_URL . 'index.php?page=users',
                                 'Services' => BASE_URL . 'index.php?page=services',
                                 'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
+                                'Fermetures' => BASE_URL . 'index.php?page=fermetures',
                             ],
                             'SECRETAIRE' => [
                                 'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
@@ -94,6 +91,7 @@
                                 'Liste RDV' => BASE_URL . 'index.php?page=rdv',
                                 'Services' => BASE_URL . 'index.php?page=services',
                                 'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
+                                'Fermetures' => BASE_URL . 'index.php?page=fermetures',
                             ],
                             'MEDECIN' => [
                                 'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',

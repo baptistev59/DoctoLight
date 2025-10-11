@@ -174,7 +174,7 @@ class RdvManager
             ':dispo_service_id' => $rdv->getDispoServiceId(),
             ':date_rdv'         => $rdv->getDateRdv() instanceof DateTimeInterface
                 ? $rdv->getDateRdv()->format('Y-m-d')
-                : $rdv->getDateRdv(),
+                : $rdv->getDateRdv()->format('Y-m-d'),
             ':heure_debut'      => $rdv->getHeureDebut(),
             ':heure_fin'        => $rdv->getHeureFin(),
             ':statut'           => $rdv->getStatut(),

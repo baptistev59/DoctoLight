@@ -5,12 +5,14 @@ class DisponibiliteServiceController
     private DisponibiliteServiceManager $dispoManager;
     private ServiceManager $serviceManager;
     private AuthController $authController;
+    private FermetureManager $fermetureManager;
 
     public function __construct(PDO $pdo)
     {
         $this->dispoManager = new DisponibiliteServiceManager($pdo);
         $this->serviceManager = new ServiceManager($pdo);
         $this->authController = new AuthController($pdo);
+        $this->fermetureManager = new FermetureManager($pdo);
     }
 
     // Liste des disponibilités
@@ -119,13 +121,66 @@ class DisponibiliteServiceController
     // Calcule les horaires d'ouverture du cabinet
     public function horairesCabinet(): void
     {
-        // Récupère tous les services actifs
-        $services = $this->serviceManager->getAllServices();
-        // Calcule les horaires en fonction des disponibilités des services actifs
-        $horaires = $this->calculerHorairesCabinet();
+        $joursOrdre = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
+        $horaires = [];
+
+        foreach ($joursOrdre as $jour) {
+            if ($this->fermetureManager->isJourFerme($jour)) {
+                $horaires[$jour] = [
+                    ['open' => null, 'close' => null, 'ferme' => true]
+                ];
+                continue;
+            }
+
+            $dispos = $this->dispoManager->getAllDisponibilitesByJour($jour);
+
+            if (empty($dispos)) {
+                $horaires[$jour] = [];
+                continue;
+            }
+
+            usort($dispos, fn($a, $b) => $a->getStartTime() <=> $b->getStartTime());
+
+            $merged = [];
+            $current = [
+                'start' => $dispos[0]->getStartTime(),
+                'end'   => $dispos[0]->getEndTime()
+            ];
+
+            foreach ($dispos as $d) {
+                $start = $d->getStartTime();
+                $end   = $d->getEndTime();
+
+                if ($start <= $current['end']) {
+                    if ($end > $current['end']) {
+                        $current['end'] = $end;
+                    }
+                } else {
+                    $merged[] = $current;
+                    $current = ['start' => $start, 'end' => $end];
+                }
+            }
+
+            $merged[] = $current;
+
+            $horaires[$jour] = array_map(fn($m) => [
+                'open'  => $m['start']->format('H:i'),
+                'close' => $m['end']->format('H:i'),
+                'ferme' => false
+            ], $merged);
+        }
+
+        // On charge aussi les services actifs
+        $services = array_filter(
+            $this->serviceManager->getAllServices(),
+            fn($s) => $s->isActive()
+        );
+
+        $fermeturesActives = $this->fermetureManager->getActive();
 
         include __DIR__ . '/../Views/home.php';
     }
+
 
     /**
      * Calcule les horaires d'ouverture du cabinet
