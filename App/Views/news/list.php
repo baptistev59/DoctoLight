@@ -34,7 +34,7 @@
                 <?php $author = $item['author']; ?>
 
                 <div class="col-md-6 col-lg-4">
-                    <div class="card news-card h-100 border-0 shadow-sm">
+                    <div class="card news-card h-100 border-0 shadow-sm card-base">
                         <?php if ($news->getImage()): ?>
                             <img src="<?= BASE_URL ?>uploads/news/<?= htmlspecialchars($news->getImage()); ?>"
                                 class="card-img-top news-thumb"

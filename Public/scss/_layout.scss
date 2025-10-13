@@ -1,9 +1,13 @@
+/* ============================================================
+   Styles de mise en page généraux (layout).
+   ============================================================ */
+
 @use "variables";
 @use "breakpoints";
 
 /* === Section Héros === */
 .hero-section {
-  background: #fff;
+  background: variables.$color-006;
   border-radius: 15px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   padding: 2rem 1rem;
@@ -15,7 +19,7 @@
 
 /* === Section À propos === */
 .about-section {
-  background-color: #fff;
+  background-color: variables.$color-006;
   border-radius: 15px;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
   padding: 2rem 1rem;
@@ -26,7 +30,6 @@
   }
 }
 
-/* === Responsive fixes === */
 @include breakpoints.down(md) {
   /* Héros et À-propos */
   .hero-section .row,
@@ -57,5 +60,31 @@
   section.mb-5 .col {
     flex: 0 0 100% !important;
     max-width: 100% !important;
+  }
+}
+
+/* Grille responsive */
+@include breakpoints.down(md) {
+  .card .row {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .card img {
+    border-radius: 15px 15px 0 0;
+    height: auto;
+  }
+
+  .btn {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+
+  .d-flex.gap-2 {
+    flex-direction: column !important;
+  }
+
+  .table {
+    font-size: 0.9rem;
   }
 }

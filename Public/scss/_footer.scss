@@ -1,9 +1,13 @@
+/* ============================================================
+   Styles spécifiques du pied de page (footer)
+   ============================================================ */
+
 @use "sass:map";
 @use "variables";
 
 footer {
   background-color: variables.$primary-color;
-  color: #fff;
+  color: variables.$color-006;
   text-align: center;
   padding: 1.5rem 0;
 

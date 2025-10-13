@@ -1,10 +1,14 @@
+/* ============================================================
+   Paramétrage typographique
+   ============================================================ */
+
 @use "variables";
 
 /* === Typographie === */
 body {
   font-family: "Poppins", sans-serif;
   font-size: 1rem;
-  color: #333;
+  color: variables.$color-001;
   line-height: 1.7;
 }
 
@@ -23,7 +27,7 @@ p,
 .card-text {
   font-size: 1rem;
   line-height: 1.7;
-  color: #444;
+  color: variables.$color-002;
 }
 
 /* Centrer sur mobile uniquement */

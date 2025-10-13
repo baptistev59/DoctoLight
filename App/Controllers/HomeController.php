@@ -1,13 +1,25 @@
 <?php
 class HomeController
 {
+    private ServiceManager $serviceManager;
+    private DisponibiliteServiceManager $dispoServiceManager;
+    private NewsManager $newsManager;
+
+
+    public function __construct(PDO $pdo)
+    {
+        $this->serviceManager = new ServiceManager($pdo);
+        $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
+        $this->newsManager = new NewsManager($pdo);
+    }
+
     public function index(): void
     {
-        $serviceManager = new ServiceManager($this->pdo, $this->config);
-        $dispoServiceManager = new DisponibiliteServiceManager($this->pdo);
+        $services = $this->serviceManager->getAllServices();
+        $horaires = $this->calculerHorairesCabinet($this->dispoServiceManager);
 
-        $services = $serviceManager->getAllServices();
-        $horaires = $this->calculerHorairesCabinet($dispoServiceManager);
+        $latestNews = $this->newsManager->getLatest(3);
+
 
         include __DIR__ . '/../Views/home.php';
     }

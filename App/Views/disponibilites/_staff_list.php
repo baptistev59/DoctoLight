@@ -1,4 +1,4 @@
-<div class="card shadow-sm p-4 mt-5">
+<div class="card shadow-sm p-4 mt-5 no-hover">
     <h4 class="text-primary mb-4">
         <i class="bi bi-clock-history"></i> Disponibilités du médecin
     </h4>

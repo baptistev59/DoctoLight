@@ -28,7 +28,7 @@
     ?>
 
     <!-- Carte d'informations -->
-    <div class="card shadow-sm mb-4">
+    <div class="card shadow-sm mb-4 no-hover">
         <div class="card-body">
             <h5 class="card-title mb-3 text-primary">
                 <?= htmlspecialchars($userToView->getPrenom() . ' ' . strtoupper($userToView->getNom())) ?>

@@ -1,14 +1,18 @@
-/* Styles pour les formulaires (login / register / edit) */
+/* ============================================================
+   Styles complémentaires pour les formulaires
+   ============================================================ */
+
 @use "sass:map";
 @use "variables";
 
+/* === Pages Patients (formulaires et fiches) === */
 .form-card {
   max-width: 480px;
   width: 100%;
   border-radius: variables.$radius;
   box-shadow: variables.$shadow;
   padding: 2rem;
-  background: #fff;
+  background: variables.$color-006;
   margin: 0 auto;
 
   @media (max-width: #{map.get(variables.$bp, md)}) {
@@ -35,5 +39,35 @@
       width: 100%;
       display: block;
     }
+  }
+}
+
+/* === Pages Patients (formulaires et fiches) === */
+.form-section {
+  background: variables.$color-006;
+  border-radius: 15px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+  padding: 2rem 1.5rem;
+  margin-bottom: 2rem;
+}
+
+/* Titre de section */
+.form-section h1,
+.form-section h2 {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+/* Pour les formulaires patients */
+.form-section form {
+  background: variables.$color-006;
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+/* Grille responsive */
+@media (max-width: #{map.get(variables.$bp, md)}) {
+  .form-section {
+    padding: 1.2rem;
   }
 }

@@ -52,7 +52,7 @@
         <h2 class="section-title text-center"><i class="bi bi-people"></i> L'équipe du cabinet</h2>
         <div class="row row-cols-1 row-cols-md-3 g-4 text-center">
             <div class="col">
-                <div class="card team-card h-100">
+                <div class="card team-card h-100 card-base">
                     <img src="<?= BASE_URL ?>images/dr-claire.jpg" alt="Dr Claire Durand - Chirurgienne-dentiste — Spécialiste en dentisterie esthétique">
                     <div class="card-body">
                         <h5 class="card-title">Dr Claire Durand</h5>
@@ -66,7 +66,7 @@
             </div>
 
             <div class="col">
-                <div class="card team-card h-100">
+                <div class="card team-card h-100 card-base">
                     <img src="<?= BASE_URL ?>images/secretaire-marie.jpg" alt="Marie Dupont - Secrétaire médicale">
                     <div class="card-body">
                         <h5 class="card-title">Marie Dupont</h5>
@@ -77,7 +77,7 @@
             </div>
 
             <div class="col">
-                <div class="card team-card h-100">
+                <div class="card team-card h-100 card-base">
                     <img src="<?= BASE_URL ?>images/docteur-luc.jpg" alt="Dr Luc Bernard - Chirurgien-dentiste — Spécialiste en implantologie et prothèses">
                     <div class="card-body">
                         <h5 class="card-title">Dr Luc Bernard</h5>

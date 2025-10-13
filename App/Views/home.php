@@ -45,6 +45,52 @@
             </div>
         </div>
     </section>
+    <!-- Séparation visuelle -->
+    <hr class="my-5">
+    <!-- Dernières actualités -->
+    <?php if (!empty($latestNews)): ?>
+        <section class="mb-5 news-section">
+            <h2 class="text-primary mb-4 text-center">
+                <i class="bi bi-newspaper"></i> Dernières actualités
+            </h2>
+
+            <div class="row g-4">
+                <?php foreach ($latestNews as $n): ?>
+                    <div class="col-12 col-md-6 col-lg-4 animate-fadeInUp">
+                        <div class="card h-100 border-0 shadow-sm card-base">
+                            <?php if ($n->getImage()): ?>
+                                <img src="<?= BASE_URL ?>uploads/news/<?= htmlspecialchars($n->getImage()) ?>"
+                                    class="card-img-top" alt="<?= htmlspecialchars($n->getTitre()) ?>">
+                            <?php endif; ?>
+
+                            <div class="card-body">
+                                <h5 class="card-title text-primary fw-bold">
+                                    <?= htmlspecialchars($n->getTitre()) ?>
+                                </h5>
+                                <p class="card-text text-muted">
+                                    <?= nl2br(htmlspecialchars(substr($n->getContenu(), 0, 100))) ?>...
+                                </p>
+                            </div>
+
+                            <div class="card-footer bg-transparent border-0 text-center">
+                                <a href="index.php?page=news_show&id=<?= $n->getId() ?>" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-eye"></i> Lire la suite
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="index.php?page=news" class="btn btn-primary">
+                    <i class="bi bi-collection"></i> Voir toutes les actualités
+                </a>
+            </div>
+        </section>
+    <?php endif; ?>
+    <!-- Séparation visuelle -->
+    <hr class="my-5">
 
     <!-- Nos Services Dynamiques -->
     <?php if (!empty($services)): ?>
@@ -52,8 +98,8 @@
             <?php foreach ($services as $service): ?>
                 <?php if ($service->isActive()): ?>
                     <!-- 1 colonne mobile, 2 en ≥ md, 3 en ≥ lg -->
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm">
+                    <div class="col-12 col-md-6 col-lg-4 animate-fadeInUp">
+                        <div class="card h-100 border-0 shadow-sm card-base">
                             <img src="<?= BASE_URL ?>uploads/services/<?= htmlspecialchars($service->getImage()) ?>"
                                 class="card-img-top"
                                 alt="<?= htmlspecialchars($service->getNom()) ?>">
@@ -67,7 +113,7 @@
                                 </p>
                             </div>
 
-                            <div class="card-footer bg-transparent border-0 d-flex flex-column flex-md-row justify-content-center gap-2">
+                            <div class="card-footer bg-transparent border-0 d-flex flex-column justify-content-center gap-2">
                                 <a href="index.php?page=service_show&id=<?= $service->getId() ?>" class="btn btn-outline-primary w-100 w-md-auto">
                                     <i class="bi bi-info-circle"></i> Voir le service
                                 </a>
@@ -84,11 +130,12 @@
         <p class="text-center text-muted">Aucun service actif pour le moment.</p>
     <?php endif; ?>
     </section>
-
+    <!-- Séparation visuelle -->
+    <hr class="my-5">
 
     <!-- Fermetures exceptionnelles -->
     <?php if (!empty($fermeturesActives)): ?>
-        <div class="alert alert-warning shadow-sm">
+        <div class="alert alert-warning shadow-sm animate-fadeInUp">
             <i class="bi bi-exclamation-triangle"></i>
             <strong>Fermeture exceptionnelle :</strong>
             <?php foreach ($fermeturesActives as $f): ?>
@@ -103,7 +150,7 @@
     <!-- Horaires d'ouverture -->
     <section class="mb-5 schedule-section">
         <h2><i class="bi bi-clock"></i> Horaires d'ouverture</h2>
-        <div class="table-responsive">
+        <div class="table-responsive animate-fadeInUp">
             <table class="table table-bordered text-center align-middle shadow-sm">
                 <thead>
                     <tr>

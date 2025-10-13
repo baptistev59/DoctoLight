@@ -1,3 +1,7 @@
+/* ============================================================
+   Styles additionnels pour les boutons
+   ============================================================ */
+
 @use "sass:color";
 @use "variables";
 
@@ -9,7 +13,7 @@
 
   &.btn-primary {
     background-color: variables.$primary-color;
-    color: #fff;
+    color: variables.$color-006;
     border: none;
 
     &:hover {
@@ -24,7 +28,16 @@
 
     &:hover {
       background-color: variables.$primary-color;
-      color: #fff;
+      color: variables.$color-006;
     }
+  }
+  &:hover,
+  &:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  }
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
 }

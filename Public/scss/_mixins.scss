@@ -1,3 +1,7 @@
+/* ============================================================
+   Mixins utilitaires
+   ============================================================ */
+
 @use "variables";
 
 @mixin fluid-type($min, $max, $minvw: 320px, $maxvw: 1200px) {
@@ -24,4 +28,15 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* ============================================================
+   Désactivation des effets de survol
+   ============================================================ */
+.no-hover,
+.no-hover * {
+  transition: none !important;
+  transform: none !important;
+  box-shadow: none !important;
+  cursor: default !important;
 }

@@ -1,3 +1,7 @@
+/* ============================================================
+   Styles spécifiques de l’en-tête (header)
+   ============================================================ */
+
 @use "sass:map";
 @use "variables";
 
@@ -7,12 +11,12 @@ header.navbar {
 
   .navbar-brand {
     font-weight: 700;
-    color: #fff;
+    color: variables.$color-006;
     font-size: 1.5rem;
   }
 
   .nav-link {
-    color: #fff;
+    color: variables.$color-006;
     margin-right: 0.5rem;
     transition: 0.2s;
 

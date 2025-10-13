@@ -1,11 +1,64 @@
+/* ============================================================
+   Gestion des tableaux et du planning de rendez-vous.
+   ============================================================ */
+
 @use "variables";
 @use "breakpoints";
 
-.table-responsive-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.table {
+  border-radius: 10px;
+  overflow: hidden;
+  background: variables.$color-006;
+  font-size: 0.95rem;
+
+  th {
+    background-color: #f8f9fa;
+    color: #1976d2;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  td {
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  @include breakpoints.down(md) {
+    font-size: 0.85rem;
+
+    th,
+    td {
+      padding: 0.5rem;
+    }
+
+    td button {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.4rem;
+    }
+  }
 }
 
+/* === Tables scrollables (planning RDV) === */
+.table-responsive-wrap,
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: variables.$color-004 transparent;
+
+  // styliser la barre de défilement horizontale ou verticale
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: variables.$color-004;
+    border-radius: 3px;
+  }
+}
+
+/* === Tables stackées (affichage cartes mobile) === */
 .table--stacked-xs {
   @include breakpoints.down(md) {
     display: block;
@@ -19,12 +72,17 @@
     tr {
       display: block;
       margin-bottom: 1rem;
+      border: 1px solid var(--bs-border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+      padding: 0.5rem;
     }
     td {
       display: flex;
       justify-content: space-between;
       gap: 0.75rem;
-      padding: 0.5rem 0.75rem;
+      padding: 0.4rem 0.75rem;
+      border: none;
       border-top: 1px solid var(--bs-border-color);
     }
     td::before {
@@ -45,7 +103,7 @@
     position: sticky;
     left: 0;
     z-index: 2;
-    background: #fff;
+    background: variables.$color-006;
     border-right: 1px solid var(--bs-border-color);
   }
 }

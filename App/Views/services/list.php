@@ -81,8 +81,8 @@
                                 <td>
                                     <?php if ($service->getImage()): ?>
                                         <img src="<?= BASE_URL ?>uploads/services/<?= htmlspecialchars($service->getImage()); ?>"
-                                            alt="Image du service"
-                                            class="service-thumb">
+                                            alt="<?= htmlspecialchars($service->getImage()); ?>"
+                                            class="img-thumbnail object-fit-cover">
                                     <?php else: ?>
                                         <span class="text-muted">Aucune</span>
                                     <?php endif; ?>

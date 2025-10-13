@@ -1,3 +1,7 @@
+/* ============================================================
+   Règles d’affichage des images
+   ============================================================ */
+
 @use "sass:map";
 @use "variables";
 
@@ -12,5 +16,16 @@
   .service-image-wrapper img,
   .card-img-top {
     height: 180px;
+  }
+}
+
+.news-image {
+  text-align: center;
+
+  img {
+    max-width: 600px;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
   }
 }

@@ -28,6 +28,8 @@ class NewsManager
     // Récupérer un certains nombre de news. Limite à 6 news si aucun paramètre n'est donné
     public function getLatest($limit = 6)
     {
+        // var_dump($limit);
+        // die;
         $limit = (int)$limit; // cast obligatoire en entier pour la sécurité (injection SQL)
         $sql = "SELECT * FROM news ORDER BY created_at DESC LIMIT $limit";
         $request = $this->pdo->prepare($sql);
@@ -37,6 +39,7 @@ class NewsManager
         while ($news = $request->fetch(PDO::FETCH_ASSOC)) {
             $newsList[] = new News($news);
         }
+
         return $newsList;
     }
 

@@ -1,3 +1,7 @@
+/* ============================================================
+   Point d’entrée SCSS – imports des partiels
+   ============================================================ */
+
 @use "sass:color";
 @use "variables";
 @use "breakpoints";
@@ -15,8 +19,8 @@
 // Styles globaux
 body {
   font-family: variables.$font-family;
-  background-color: #f9fbfd;
-  color: #333;
+  background-color: variables.$color-005;
+  color: variables.$color-001;
   line-height: 1.6;
 }
 

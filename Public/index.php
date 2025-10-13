@@ -52,6 +52,9 @@ $routes = [
     // À propos
     'apropos' => ['view' => 'about', 'public' => true],
 
+    // Page d'accueil
+    'home' => ['controller' => 'HomeController', 'method' => 'index', 'public' => true],
+
     // RDV
     'rdv' => ['controller' => 'RDVController', 'method' => 'planning', 'role' => ['MEDECIN', 'SECRETAIRE']],
     'create_rdv' => ['controller' => 'RDVController', 'method' => 'create'],
@@ -114,8 +117,7 @@ $routes = [
     'dispo_staff_update' => ['controller' => 'DisponibiliteStaffController', 'method' => 'update', 'role' => ['ADMIN', 'SECRETAIRE', 'MEDECIN']],
     'dispo_staff_delete' => ['controller' => 'DisponibiliteStaffController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE', 'MEDECIN']],
 
-    // Ouverture Cabinet
-    'home' => ['controller' => 'DisponibiliteServiceController', 'method' => 'horairesCabinet', 'public' => true],
+
 
     // Fermeture exceptionnelle
     'fermetures'        => ['controller' => 'FermetureController', 'method' => 'list', 'role' => ['ADMIN', 'SECRETAIRE']],

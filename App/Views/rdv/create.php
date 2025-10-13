@@ -1,6 +1,6 @@
 <?php include __DIR__ . '/../layouts/header.php'; ?>
 
-<div class="container my-5">
+<div class="container my-5 form-section">
     <h1 class="mb-4 text-primary">
         <i class="bi bi-calendar-plus"></i>
         <?= !empty($editId) ? "Modifier un rendez-vous" : "Créer un rendez-vous" ?>
@@ -23,7 +23,7 @@
         <?php unset($_SESSION['error']); ?>
     <?php endif; ?>
 
-    <form method="post" action="index.php?page=rdv_store" id="rdvForm" class="card p-4 shadow-sm">
+    <form method="post" action="index.php?page=rdv_store" id="rdvForm" class="card p-4 shadow-sm no-hover">
         <?php
         $isPatient   = $isPatient ?? false;
         $currentUser = $currentUser ?? null;
