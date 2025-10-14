@@ -4,13 +4,14 @@ class HomeController
     private ServiceManager $serviceManager;
     private DisponibiliteServiceManager $dispoServiceManager;
     private NewsManager $newsManager;
-
+    private FermetureManager $fermetureManager;
 
     public function __construct(PDO $pdo)
     {
         $this->serviceManager = new ServiceManager($pdo);
         $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
         $this->newsManager = new NewsManager($pdo);
+        $this->fermetureManager = new FermetureManager($pdo);
     }
 
     public function index(): void
@@ -19,6 +20,7 @@ class HomeController
         $horaires = $this->calculerHorairesCabinet($this->dispoServiceManager);
 
         $latestNews = $this->newsManager->getLatest(3);
+        $fermeturesActives = $this->fermetureManager->getActive();
 
 
         include __DIR__ . '/../Views/home.php';

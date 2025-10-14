@@ -159,14 +159,13 @@
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- <?php var_dump($horaires); ?> -->
                     <?php foreach ($horaires as $jour => $plages): ?>
-                        <tr class="<?= empty($plages) ? 'table-secondary' : '' ?>">
+                        <tr class="<?= empty($plages['open']) ? 'table-secondary' : '' ?>">
                             <td data-label="Jour"><?= ucfirst(strtolower($jour)) ?></td>
                             <td data-label="Horaires">
-                                <?php if (!empty($plages)): ?>
-                                    <?php foreach ($plages as $p): ?>
-                                        <div><?= htmlspecialchars($p['open']) ?> - <?= htmlspecialchars($p['close']) ?></div>
-                                    <?php endforeach; ?>
+                                <?php if (!empty($plages['open']) && !empty($plages['close'])): ?>
+                                    <?= htmlspecialchars($plages['open']) ?> - <?= htmlspecialchars($plages['close']) ?>
                                 <?php else: ?>
                                     Fermé
                                 <?php endif; ?>
