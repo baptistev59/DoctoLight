@@ -2,7 +2,7 @@
 
 <div class="container my-5">
 
-    <!-- Section Héros -->
+    <!-- Section Bannière -->
     <section class="hero-section mb-5">
         <div class="row align-items-center g-4">
             <div class="col-12 col-md-6 order-1 order-md-2 text-center">

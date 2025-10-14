@@ -39,22 +39,28 @@
 <body class="d-flex flex-column min-vh-100 bg-light">
 
     <!-- ================= HEADER ================= -->
-    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-        <div class="container">
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top">
+        <div class="container py-2">
+            <!-- Logo + Nom -->
             <a class="navbar-brand fw-bold text-white" href="<?= BASE_URL ?>index.php">
                 <i class="bi bi-hospital me-1"></i> DoctoLight
             </a>
 
+            <!-- Bouton mobile -->
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
+            <!-- Menu principal -->
             <div class="collapse navbar-collapse" id="navbarMain">
-                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=home">Accueil</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=news">Actualités</a></li>
-                    <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=apropos">À propos</a></li>
-
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    <!-- Liens publics -->
+                    <li class="nav-item mx-lg-1">
+                        <a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=home">Accueil</a>
+                    </li>
+                    <li class="nav-item mx-lg-1">
+                        <a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=news">Actualités</a>
+                    </li>
 
                     <?php
                     $currentUser = $_SESSION['user'] ?? null;
@@ -62,17 +68,31 @@
                     ?>
 
                     <?php if ($currentUser instanceof User): ?>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown">
-                                <?= htmlspecialchars($currentUser->getPrenom() . " " . $currentUser->getNom()) ?>
-                                (<?= htmlspecialchars($currentUser->getHighestRole() ?? '') ?>)
+                        <!-- Menu utilisateur connecté -->
+                        <li class="nav-item dropdown mx-lg-1">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center text-white" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle me-1 fs-5"></i>
+                                <span>
+                                    <?= htmlspecialchars($currentUser->getPrenom() . " " . $currentUser->getNom()) ?>
+                                </span>
+                                <span class="ms-1 small text-light opacity-75">
+                                    (<?= htmlspecialchars($currentUser->getHighestRole() ?? '') ?>)
+                                </span>
                             </a>
-                            <ul class="dropdown-menu dropdown-menu-end">
-                                <li><a class="dropdown-item" href="<?= BASE_URL ?>index.php?page=profile"><i class="bi bi-person-circle me-1"></i> Profil</a></li>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                <li>
+                                    <a class="dropdown-item" href="<?= BASE_URL ?>index.php?page=profile">
+                                        <i class="bi bi-gear me-2"></i> Profil
+                                    </a>
+                                </li>
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item text-danger" href="<?= BASE_URL ?>index.php?page=logout"><i class="bi bi-box-arrow-right me-1"></i> Déconnexion</a></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="<?= BASE_URL ?>index.php?page=logout">
+                                        <i class="bi bi-box-arrow-right me-2"></i> Déconnexion
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
@@ -80,45 +100,89 @@
                         // Liens par rôle
                         $menuLinks = [
                             'ADMIN' => [
-                                'Administration' => BASE_URL . 'index.php?page=users',
-                                'Services' => BASE_URL . 'index.php?page=services',
-                                'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
-                                'Fermetures' => BASE_URL . 'index.php?page=fermetures',
+                                'Rendez-vous' => [
+                                    'Planning des rendez-vous' => BASE_URL . 'index.php?page=rdv',
+                                ],
+                                'Administration' => [
+                                    'Comptes des utilisateurs' => BASE_URL . 'index.php?page=users',
+                                    'Services du cabinet' => BASE_URL . 'index.php?page=services',
+                                    'Fermetures du cabinet' => BASE_URL . 'index.php?page=fermetures',
+                                ],
                             ],
                             'SECRETAIRE' => [
-                                'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
-                                'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
-                                'Liste RDV' => BASE_URL . 'index.php?page=rdv',
-                                'Services' => BASE_URL . 'index.php?page=services',
-                                'Disponibilités' => BASE_URL . 'index.php?page=dispo_services',
-                                'Fermetures' => BASE_URL . 'index.php?page=fermetures',
+                                'Rendez-vous' => [
+                                    'Prendre un rendez-vous' => BASE_URL . 'index.php?page=create_rdv',
+                                    'Planning des rendez-vous' => BASE_URL . 'index.php?page=rdv',
+                                ],
+                                'Administration' => [
+                                    'Services du cabinet' => BASE_URL . 'index.php?page=services',
+                                    'Fermetures du cabinet' => BASE_URL . 'index.php?page=fermetures',
+                                ],
                             ],
                             'MEDECIN' => [
-                                'Tableau de bord' => BASE_URL . 'index.php?page=dashboard',
-                                'Liste RDV' => BASE_URL . 'index.php?page=rdv',
+                                'Rendez-vous' => [
+                                    'Planning des rendez-vous' => BASE_URL . 'index.php?page=rdv',
+                                ],
                             ],
                             'PATIENT' => [
-                                'Prendre RDV' => BASE_URL . 'index.php?page=create_rdv',
-                                'Mes RDV' => BASE_URL . 'index.php?page=rdv_listpatient',
+                                'Rendez-vous' => [
+                                    'Prendre un rendez-vous' => BASE_URL . 'index.php?page=create_rdv',
+                                    'Mes rendez-vous' => BASE_URL . 'index.php?page=rdv_listpatient',
+                                ],
                             ],
                         ];
+
 
                         $displayed = [];
                         foreach ($currentRoles as $role) {
                             $roleName = is_string($role) ? $role : $role->getName();
+
                             if (!empty($menuLinks[$roleName])) {
-                                foreach ($menuLinks[$roleName] as $label => $url) {
-                                    if (!in_array($label, $displayed, true)) {
-                                        echo '<li class="nav-item"><a class="nav-link text-white" href="' . $url . '">' . $label . '</a></li>';
+                                foreach ($menuLinks[$roleName] as $label => $links) {
+                                    // Si c'est un groupe de liens (menu déroulant)
+                                    if (is_array($links)) {
+                                        // Empêche de répéter le même dropdown
+                                        if (in_array($label, $displayed, true)) continue;
+
+                                        echo '<li class="nav-item dropdown">';
+                                        echo '<a class="nav-link dropdown-toggle text-white" href="#" id="dropdown' . $label . '" role="button" data-bs-toggle="dropdown" aria-expanded="false">';
+                                        echo htmlspecialchars($label);
+                                        echo '</a>';
+                                        echo '<ul class="dropdown-menu shadow-sm">';
+                                        foreach ($links as $label => $url) {
+                                            echo '<li><a class="dropdown-item" href="' . $url . '">' . htmlspecialchars($label) . '</a></li>';
+                                        }
+                                        echo '</ul>';
+                                        echo '</li>';
+
                                         $displayed[] = $label;
+                                    }
+                                    // Si c’est un lien direct
+                                    else {
+                                        if (!in_array($label, $displayed, true)) {
+                                            echo '<li class="nav-item"><a class="nav-link text-white" href="' . $links  . '">' . htmlspecialchars($label) . '</a></li>';
+                                            $displayed[] = $label;
+                                        }
                                     }
                                 }
                             }
                         }
                         ?>
+                        <li class="nav-item mx-lg-1">
+                            <a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=apropos">À propos</a>
+                        </li>
                     <?php else: ?>
-                        <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=login"><i class="bi bi-box-arrow-in-right me-1"></i> Connexion</a></li>
-                        <li class="nav-item"><a class="nav-link text-white" href="<?= BASE_URL ?>index.php?page=register"><i class="bi bi-person-plus me-1"></i> Inscription</a></li>
+                        <!-- Boutons Connexion / Inscription -->
+                        <li class="nav-item  mx-lg-1">
+                            <a class="btn btn-outline-light btn-sm px-3" href="<?= BASE_URL ?>index.php?page=login">
+                                <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
+                            </a>
+                        </li>
+                        <li class="nav-item mx-lg-1 mt-2 mt-lg-0">
+                            <a class="btn btn-light btn-sm px-3" href="<?= BASE_URL ?>index.php?page=register">
+                                <i class="bi bi-person-plus me-1"></i> Inscription
+                            </a>
+                        </li>
                     <?php endif; ?>
                 </ul>
             </div>

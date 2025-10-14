@@ -9,12 +9,14 @@
 ' ===========================
 class User {
   -id : int
-  -name : string
+  -nom : string
+  -prenom : string
   -email : string
-  -adress : string
-  -phone : string
+  -date_naissance : datetime
   -password : string
-  -isActive : boolean
+  -is_active : boolean
+  -created_at : datetime
+  -role : Role[]
 
   +createUser()
   +updateUser()
@@ -50,10 +52,11 @@ class UserRole {
 ' ===========================
 class Service {
   -id : int
-  -name : string
+  -nom : string
   -description : text
-  -price : decimal
-  -isActive : boolean
+  -image : text
+  -duree : int
+  -is_active : boolean
 
   +createService()
   +updateService()
@@ -66,27 +69,26 @@ class Service {
 class DisponibiliteStaff {
   -id : int
   -staff_id : int
-  -start_datetime : datetime
-  -end_datetime : datetime
-  -isDispo : boolean
+  -start_time : datetime
+  -end_time : datetime
+  -jour_semaine : string
+
 
   +createDisponibilite()
   +updateDisponibilite()
   +deleteDisponibilite()
-  +isDisponible(datetime) : boolean
 }
 
 class DisponibiliteService {
   -id : int
   -service_id : int
-  -start_datetime : datetime
-  -end_datetime : datetime
-  -isDispo : boolean
+  -start_time : datetime
+  -end_time : datetime
+  -jour_semaine : string
 
   +createDisponibilite()
   +updateDisponibilite()
   +deleteDisponibilite()
-  +isDisponible(datetime) : boolean
 }
 ' ===========================
 ' Rendez-vous
@@ -96,9 +98,12 @@ class RDV {
   -patient_id : int
   -staff_id : int
   -service_id : int
-  -start_datetime : datetime
-  -end_datetime : datetime
+  -heure_debut : datetime
+  -heure_fin : datetime
   -status : StatutRdv
+  -duree : int
+  -dispo_staff : DisponibiliteStaff
+  -dispo_services : DisponibiliteService
 
   +createRDV()
   +updateRDV()
@@ -117,8 +122,11 @@ enum StatutRdv {
 class News {
   -id : int
   -title : string
-  -content : text
+  -contenu : text
+  -created_by : User
+  -created_at : datetime
   -isActive : boolean
+  -image : string
 
   +createNews()
   +updateNews()

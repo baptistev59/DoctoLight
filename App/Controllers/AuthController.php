@@ -82,8 +82,8 @@ class AuthController
         // Détruire complètement la session
         session_destroy();
 
-        // Redirection vers login ou accueil
-        header("Location: index.php?page=login");
+        // Redirection vers accueil
+        header("Location: index.php?page=home");
         exit;
     }
 
