@@ -13,7 +13,7 @@ class User {
   -prenom : string
   -email : string
   -date_naissance : datetime
-  -password : string
+  -passwordHash : string
   -is_active : boolean
   -created_at : datetime
   -role : Role[]
@@ -26,27 +26,13 @@ class User {
 
 class Role {
   -id : int
-  -nom : RoleName
+  -name : RoleName
 
   +createRole()
   +updateRole()
   +deleteRole()
 }
 
-enum RoleName {
-  ADMIN
-  MEDECIN
-  SECRETAIRE
-  PATIENT
-}
-
-class UserRole {
-  -user_id : int
-  -role_id : int
-
-  +assignRoleToUser()
-  +removeRoleFromUser()
-}
 ' ===========================
 ' Services
 ' ===========================
@@ -100,10 +86,10 @@ class RDV {
   -service_id : int
   -heure_debut : datetime
   -heure_fin : datetime
-  -status : StatutRdv
+  -status : string
   -duree : int
-  -dispo_staff : DisponibiliteStaff
-  -dispo_services : DisponibiliteService
+  -dispoStaffId : int
+  -dispoServicesId : int
 
   +createRDV()
   +updateRDV()
@@ -111,11 +97,6 @@ class RDV {
   +checkDisponibilites() : boolean
 }
 
-enum StatutRdv {
-  Programmé
-  Annulé
-  Terminé
-}
 ' ===========================
 ' Actualités
 ' ===========================
@@ -125,13 +106,11 @@ class News {
   -contenu : text
   -created_by : User
   -created_at : datetime
-  -isActive : boolean
   -image : string
 
   +createNews()
   +updateNews()
   +deleteNews()
-  +togglePublish()
 }
 
 ' ===========================
@@ -139,16 +118,16 @@ class News {
 ' ===========================
 class AuditLog {
   -id : int
-  -entity : string
+  -tableName : string
   -entity_id : int
   -user_id : int
   -action : string <<CREATE, UPDATE, DELETE>>
   -description : text
   -ip_address : string
-  -created_at : datetime
+  -actionDate : datetime
 
-  +logAction(entity, entity_id, user_id, action, description, ip)
-  +getLogsByEntity(entity, entity_id)
+  +logAction(tableName, entity_id, user_id, action, description, ip)
+  +getLogsByEntity(tableName, entity_id)
 }
 
 ' ===========================

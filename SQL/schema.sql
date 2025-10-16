@@ -120,11 +120,15 @@ CREATE TABLE audit_log (
     id INT AUTO_INCREMENT PRIMARY KEY,
     table_name VARCHAR(100) NOT NULL,
     entity_id INT NOT NULL,
-    action TEXT NOT NULL,
+    action ENUM('INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT') NOT NULL,
+    description TEXT NULL,
     action_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    user_id INT NOT NULL,
-    ip_address VARCHAR(45) NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+    user_id INT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    CONSTRAINT fk_auditlog_user
+        FOREIGN KEY (user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL      
 );
 
 -- ========================
@@ -133,7 +137,9 @@ CREATE TABLE audit_log (
 CREATE INDEX idx_rdv_date ON rdv(date_rdv);
 CREATE INDEX idx_rdv_patient_date ON rdv(patient_id, date_rdv);
 CREATE INDEX idx_rdv_staff_date ON rdv(staff_id, date_rdv, heure_debut, heure_fin);
-CREATE INDEX idx_audit_table_date ON audit_log(table_name, action_date);
+CREATE INDEX idx_auditlog_table ON audit_log(table_name);
+CREATE INDEX idx_auditlog_user ON audit_log(user_id);
+CREATE INDEX idx_auditlog_actiondate ON audit_log(action_date);
 
 -- =====================================================
 -- FIN DU SCHEMA

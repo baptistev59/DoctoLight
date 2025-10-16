@@ -1,25 +1,13 @@
 <?php
 
-class RDVController
+declare(strict_types=1);
+
+class RDVController extends BaseController
 {
-    private PDO $pdo;
-    private array $config;
-    private UserManager $userManager;
-    private ServiceManager $serviceManager;
-    private DisponibiliteStaffManager $dispoStaffManager;
-    private DisponibiliteServiceManager $dispoServiceManager;
-    private RdvManager $rdvManager;
 
     public function __construct(PDO $pdo, array $config)
     {
-        $this->pdo = $pdo;
-        $this->config = $config;
-
-        $this->userManager = new UserManager($pdo, $config);
-        $this->serviceManager = new ServiceManager($pdo, $config);
-        $this->dispoStaffManager = new DisponibiliteStaffManager($pdo);
-        $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
-        $this->rdvManager = new RdvManager($pdo);
+        parent::__construct($pdo);
     }
 
     public function listRDV(int $userId): void
@@ -173,6 +161,8 @@ class RDVController
 
     public function createValid(): void
     {
+        $this->authController->checkCsrfToken();
+
         $currentUser = $_SESSION['user'];
         $patientId   = $_POST['patient_id'] ?? $currentUser->getId();
         $serviceId   = $_POST['service_id'] ?? null;
@@ -217,16 +207,21 @@ class RDVController
 
     public function store(): void
     {
+        $this->authController->checkCsrfToken();
+
         $currentUser = $_SESSION['user'];
 
-        $patientId = $_POST['patient_id'] ?? $currentUser->getId();
-        $serviceId = $_POST['service_id'] ?? null;
-        $staffId   = $_POST['staff_id'] ?? null;
+        $patientId = isset($_POST['patient_id']) ? (int)$_POST['patient_id'] : (int)$currentUser->getId();
+        $serviceId = isset($_POST['service_id']) ? (int)$_POST['service_id'] : null;
+        $staffId   = isset($_POST['staff_id']) ? (int)$_POST['staff_id'] : null;
         $dateRdv   = $_POST['date_rdv'] ?? null;
         $heureRdv  = $_POST['heure_rdv'] ?? null;
         $editId    = !empty($_POST['edit_id']) ? (int)$_POST['edit_id'] : null;
 
-
+        if (!$serviceId || !$staffId) {
+            $_SESSION['error'] = "Service ou personnel invalide.";
+            redirect(BASE_URL . 'index.php?page=create_rdv');
+        }
 
         if ($currentUser->hasRole('ADMIN')) {
             $_SESSION['error'] = "Un administrateur ne peut pas prendre de rendez-vous.";
@@ -296,9 +291,15 @@ class RDVController
 
         if ($editId) {
             $this->rdvManager->updateRdv($rdv);
+            // Audit
+            $this->audit('rdv', (int)$editId, 'UPDATE', "Modification du RDV #$editId");
+
             $_SESSION['success'] = "Rendez-vous modifié avec succès.";
         } else {
             $this->rdvManager->createRdv($rdv);
+            // Audit
+            $this->audit('rdv', (int)$this->pdo->lastInsertId(), 'INSERT', "Création d'un nouveau RDV");
+
             $_SESSION['success'] = "Rendez-vous créé avec succès.";
         }
 
@@ -629,6 +630,7 @@ class RDVController
         // Mise à jour
         $rdv->setStatut('ANNULE');
         $this->rdvManager->updateRdv($rdv);
+        $this->audit('rdv', $rdvId, 'UPDATE', "Annulation du RDV #$rdvId");
 
         $_SESSION['success'] = "RDV annulé avec succès.";
         $this->redirectBackOr($isPatient ? 'rdv_listpatient' : 'rdv');
@@ -636,6 +638,8 @@ class RDVController
 
     public function rdvEdit(int $rdvId): void
     {
+        $this->authController->checkCsrfToken();
+
         $currentUser = $_SESSION['user'] ?? null;
         if (!$currentUser) {
             $_SESSION['error'] = "Veuillez vous connecter.";

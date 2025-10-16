@@ -1,17 +1,12 @@
 <?php
-class UserController
-{
-    private PDO $pdo;
-    private UserManager $userManager;
-    private AuthController $authController;
-    private DisponibiliteStaffManager $dispoStaffManager;
 
+declare(strict_types=1);
+
+class UserController extends BaseController
+{
     public function __construct(PDO $pdo, array $config)
     {
-        $this->pdo = $pdo;
-        $this->userManager = new UserManager($pdo, $config);
-        $this->authController = new AuthController($pdo);
-        $this->dispoStaffManager = new DisponibiliteStaffManager($pdo);
+        parent::__construct($pdo);
     }
 
     // Liste des utilisateurs (admin uniquement) avec recherche, tri et pagination
@@ -108,8 +103,23 @@ class UserController
         }
 
         $user = $this->userManager->findById($id);
+
+
+
+
         if ($user) {
+            // Préparation Audit
+            $action = $user->isActive() ? 'ACTIVATE' : 'DEACTIVATE';
+            $desc = ($action === 'ACTIVATE')
+                ? "Activation de l'utilisateur #{$id}"
+                : "Désactivation de l'utilisateur #{$id}";
+
+            // Modification is_active
             $this->userManager->toggleActive($user);
+
+            // Audit
+            $this->audit('users', $id, $action, $desc);
+
             $_SESSION['success'] = "Utilisateur mis à jour.";
         } else {
             $_SESSION['error'] = "Utilisateur introuvable.";
@@ -136,7 +146,7 @@ class UserController
                 'nom'            => $_POST['nom'] ?? '',
                 'prenom'         => $_POST['prenom'] ?? '',
                 'email'          => $_POST['email'] ?? '',
-                'password'       => $_POST['password'], // Hashage dans le UserManegr
+                'password'       => $_POST['password'] ?? '', // Hashage dans le UserManegr
                 'date_naissance' => $_POST['date_naissance'] ?? null,
                 'is_active'      => isset($_POST['is_active']) ? 1 : 0,
                 'roles'          => $_POST['roles'] ?? []
@@ -146,6 +156,10 @@ class UserController
 
             if ($newUser instanceof User) {
                 $_SESSION['success'] = "Utilisateur {$newUser->getPrenom()} {$newUser->getNom()} créé avec succès.";
+
+                // Audit
+                $this->audit('users', $newUser->getId(), 'INSERT', "Création de l'utilisateur {$newUser->getEmail()}");
+
                 header("Location: index.php?page=users");
                 exit;
             } else {
@@ -261,6 +275,10 @@ class UserController
             if ($updatedUser instanceof User) {
                 $_SESSION['success'] = "Profil mis à jour avec succès.";
 
+                // Audit
+                $editor = $_SESSION['user']->getEmail() ?? 'inconnu';
+                $this->audit('users', $updatedUser->getId(), 'UPDATE', "Mise à jour du profil utilisateur par {$editor} ({$updatedUser->getEmail()}");
+
                 // Si l'utilisateur modifie sa propre fiche → on met à jour la session
                 if ($userLogged->getId() === $updatedUser->getId()) {
                     $_SESSION['user'] = $updatedUser;
@@ -314,6 +332,9 @@ class UserController
 
         if ($deleted) {
             $_SESSION['success'] = "Utilisateur supprimé avec succès.";
+
+            // Audit
+            $this->audit('users', $id, 'DELETE', "Suppression de l’utilisateur #{$id}");
         } else {
             $_SESSION['error'] = "Impossible de supprimer cet utilisateur : il a au moins un RDV.";
         }
@@ -336,8 +357,7 @@ class UserController
         $id = $_GET['id'] ?? null;
 
         if ($id !== null && $currentUser->hasRole(['ADMIN', 'MEDECIN', 'SECRETAIRE'])) {
-            $userManager = new UserManager($this->pdo, []);
-            $userToView = $userManager->findById((int)$id);
+            $userToView = $this->userManager->findById((int)$id);
 
             if (!$userToView) {
                 $_SESSION['error'] = "Utilisateur introuvable.";

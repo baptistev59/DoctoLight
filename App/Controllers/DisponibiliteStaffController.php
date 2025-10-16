@@ -1,23 +1,20 @@
 <?php
 
-class DisponibiliteStaffController
+declare(strict_types=1);
+
+class DisponibiliteStaffController extends BaseController
 {
-    private DisponibiliteStaffManager $dispoManager;
-    private UserManager $userManager;
-    private AuthController $authController;
 
     public function __construct(PDO $pdo)
     {
-        $this->dispoManager = new DisponibiliteStaffManager($pdo);
-        $this->userManager = new UserManager($pdo, []);
-        $this->authController = new AuthController($pdo);
+        parent::__construct($pdo);
     }
 
     // Liste des disponibilités (admin et secrétaire uniquement)
     public function list(): void
     {
         $this->authController->requireRole(['ADMIN', 'SECRETAIRE']);
-        $dispos = $this->dispoManager->getAllDisponibilites();
+        $dispos = $this->dispoServiceManager->getAllDisponibilites();
         $users = $this->userManager->findAll();
         include __DIR__ . '/../Views/disponibilites_staff/list.php';
     }
@@ -33,7 +30,6 @@ class DisponibiliteStaffController
             header("Location: index.php?page=login");
             exit;
         }
-
 
         $staffId = intval($_POST['user_id'] ?? 0);
         $jour = strtoupper(trim($_POST['jour_semaine'] ?? ''));
@@ -54,7 +50,15 @@ class DisponibiliteStaffController
         }
 
         $dispo = new DisponibiliteStaff(null, $staffId, $start, $end, $jour);
-        $this->dispoManager->createDisponibilite($dispo);
+        $this->dispoStaffManager->createDisponibilite($dispo);
+
+        // Audit
+        $this->audit(
+            'disponibilite_staff',
+            0,
+            'INSERT',
+            "Ajout d'une disponibilité pour le staff #$staffId ($jour, {$start->format('H:i')}-{$end->format('H:i')})"
+        );
 
         $_SESSION['success'] = "Disponibilité ajoutée avec succès.";
         header("Location: index.php?page=profile&id={$staffId}");
@@ -67,7 +71,7 @@ class DisponibiliteStaffController
         $this->authController->checkCsrfToken();
 
         $currentUser = $_SESSION['user'] ?? null;
-        $dispo = $this->dispoManager->getDisponibiliteById($id);
+        $dispo = $this->dispoStaffManager->getDisponibiliteById($id);
 
         if (!$dispo) {
             $_SESSION['error'] = "Disponibilité introuvable.";
@@ -92,13 +96,26 @@ class DisponibiliteStaffController
             exit;
         }
 
+        // Récup pour l'audit
+        $oldValues = "{$dispo->getJourSemaine()} {$dispo->getStartTime()->format('H:i')}-{$dispo->getEndTime()->format('H:i')}";
+
+
         $userId = intval($_POST['user_id'] ?? 0);
         $dispo->setJourSemaine($jour);
         $dispo->setStartTime($start);
         $dispo->setEndTime($end);
         $dispo->setStaffId($userId);
 
-        $this->dispoManager->updateDisponibilite($dispo);
+        $this->dispoStaffManager->updateDisponibilite($dispo);
+
+        // Audit
+        $newValues = "{$jour} {$start->format('H:i')}-{$end->format('H:i')}";
+        $this->audit(
+            'disponibilite_staff',
+            $id,
+            'UPDATE',
+            "Modification de disponibilité pour le staff #$userId ($oldValues → $newValues)"
+        );
 
         $_SESSION['success'] = "Disponibilité mise à jour.";
         header("Location: index.php?page=profile&id=" . $dispo->getStaffId());
@@ -111,7 +128,7 @@ class DisponibiliteStaffController
         $this->authController->checkCsrfToken();
 
         $currentUser = $_SESSION['user'] ?? null;
-        $dispo = $this->dispoManager->getDisponibiliteById($id);
+        $dispo = $this->dispoStaffManager->getDisponibiliteById($id);
 
         if (!$dispo) {
             $_SESSION['error'] = "Disponibilité introuvable.";
@@ -126,7 +143,16 @@ class DisponibiliteStaffController
             exit;
         }
 
-        $this->dispoManager->deleteDisponibilite($id);
+        $this->dispoStaffManager->deleteDisponibilite($id);
+
+        // Audit
+        $this->audit(
+            'disponibilite_staff',
+            $id,
+            'DELETE',
+            "Suppression d'une disponibilité du staff #{$dispo->getStaffId()} ({$dispo->getJourSemaine()} {$dispo->getStartTime()->format('H:i')}-{$dispo->getEndTime()->format('H:i')})"
+        );
+
         $_SESSION['success'] = "Disponibilité supprimée avec succès.";
         header("Location: index.php?page=profile&id=" . $dispo->getStaffId());
         exit;

@@ -1,25 +1,20 @@
 <?php
 
-class DisponibiliteServiceController
+declare(strict_types=1);
+
+class DisponibiliteServiceController extends BaseController
 {
-    private DisponibiliteServiceManager $dispoManager;
-    private ServiceManager $serviceManager;
-    private AuthController $authController;
-    private FermetureManager $fermetureManager;
 
     public function __construct(PDO $pdo)
     {
-        $this->dispoManager = new DisponibiliteServiceManager($pdo);
-        $this->serviceManager = new ServiceManager($pdo);
-        $this->authController = new AuthController($pdo);
-        $this->fermetureManager = new FermetureManager($pdo);
+        parent::__construct($pdo);
     }
 
     // Liste des disponibilités
     public function list(): void
     {
         $this->authController->requireRole(['ADMIN', 'SECRETAIRE']);
-        $dispos = $this->dispoManager->getAllDisponibilites();
+        $dispos = $this->dispoServiceManager->getAllDisponibilites();
         $services = $this->serviceManager->getAllServices();
         include __DIR__ . '/../Views/disponibilites/list.php';
     }
@@ -49,7 +44,10 @@ class DisponibiliteServiceController
         }
 
         $dispo = new DisponibiliteService(null, $serviceId, $start, $end, $jour);
-        $this->dispoManager->createDisponibilite($dispo);
+        $this->dispoServiceManager->createDisponibilite($dispo);
+
+        // Audit
+        $this->audit('disponibilite_service', 0, 'INSERT', "Ajout d\'une disponibilité pour le service #$serviceId ($jour, {$start->format('H:i')}-{$end->format('H:i')})");
 
         $_SESSION['success'] = "Disponibilité ajoutée avec succès.";
         header("Location: index.php?page=service_show&id=$serviceId");
@@ -60,7 +58,7 @@ class DisponibiliteServiceController
     public function edit(int $id): void
     {
         $this->authController->requireRole(['ADMIN', 'SECRETAIRE']);
-        $dispo = $this->dispoManager->getDisponibiliteById($id);
+        $dispo = $this->dispoServiceManager->getDisponibiliteById($id);
 
 
         if (!$dispo) {
@@ -81,18 +79,26 @@ class DisponibiliteServiceController
     {
         $this->authController->checkCsrfToken();
 
-        $dispo = $this->dispoManager->getDisponibiliteById($id);
+        $dispo = $this->dispoServiceManager->getDisponibiliteById($id);
         if (!$dispo) {
             $_SESSION['error'] = "Disponibilité introuvable.";
             header("Location: index.php?page=services");
             exit;
         }
 
+        // Pour l'enregistrement dans l'audit
+        $oldValues = "{$dispo->getJourSemaine()} {$dispo->getStartTime()->format('H:i')}-{$dispo->getEndTime()->format('H:i')}";
+
         $dispo->setJourSemaine($_POST['jour_semaine']);
         $dispo->setStartTime(new DateTime($_POST['start_time']));
         $dispo->setEndTime(new DateTime($_POST['end_time']));
 
-        $this->dispoManager->updateDisponibilite($dispo);
+        $this->dispoServiceManager->updateDisponibilite($dispo);
+
+        // Audit
+        $newValues = "{$dispo->getJourSemaine()} {$dispo->getStartTime()->format('H:i')}-{$dispo->getEndTime()->format('H:i')}";
+        $this->audit('disponibilite_service', $id, 'UPDATE', "Modification de disponibilité ($oldValues → $newValues)");
+
         $_SESSION['success'] = "Disponibilité mise à jour avec succès.";
         header("Location: index.php?page=service_show&id=" . $dispo->getServiceId());
         exit;
@@ -103,7 +109,7 @@ class DisponibiliteServiceController
     {
         $this->authController->checkCsrfToken();
 
-        $dispo = $this->dispoManager->getDisponibiliteById($id);
+        $dispo = $this->dispoServiceManager->getDisponibiliteById($id);
         if (!$dispo) {
             $_SESSION['error'] = "Disponibilité introuvable.";
             header("Location: index.php?page=services");
@@ -111,7 +117,10 @@ class DisponibiliteServiceController
         }
 
         $serviceId = $dispo->getServiceId();
-        $this->dispoManager->deleteDisponibilite($id);
+        $this->dispoServiceManager->deleteDisponibilite($id);
+
+        // 🧾 Audit log
+        $this->audit('disponibilite_service', $id, 'DELETE', "Suppression d\'une disponibilité du service #$serviceId ({$dispo->getJourSemaine()} {$dispo->getStartTime()->format('H:i')}-{$dispo->getEndTime()->format('H:i')})");
 
         $_SESSION['success'] = "Disponibilité supprimée.";
         header("Location: index.php?page=service_show&id=$serviceId");
@@ -132,7 +141,7 @@ class DisponibiliteServiceController
                 continue;
             }
 
-            $dispos = $this->dispoManager->getAllDisponibilitesByJour($jour);
+            $dispos = $this->dispoServiceManager->getAllDisponibilitesByJour($jour);
 
             if (empty($dispos)) {
                 $horaires[$jour] = [];
@@ -179,61 +188,5 @@ class DisponibiliteServiceController
         $fermeturesActives = $this->fermetureManager->getActive();
 
         include __DIR__ . '/../Views/home.php';
-    }
-
-
-    /**
-     * Calcule les horaires d'ouverture du cabinet
-     * avec gestion des coupures (matin / après-midi)
-     */
-    private function calculerHorairesCabinet(): array
-    {
-        $jours = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'];
-        $horaires = [];
-
-        foreach ($jours as $jour) {
-            $dispos = $this->dispoManager->getAllDisponibilitesByJour($jour);
-
-            if (empty($dispos)) {
-                $horaires[$jour] = [];
-                continue;
-            }
-
-            // Trie par heure de début
-            usort($dispos, fn($a, $b) => $a->getStartTime() <=> $b->getStartTime());
-
-            $merged = [];
-            $current = [
-                'start' => $dispos[0]->getStartTime(),
-                'end'   => $dispos[0]->getEndTime()
-            ];
-
-            foreach ($dispos as $d) {
-                $start = $d->getStartTime();
-                $end   = $d->getEndTime();
-
-                // Si chevauchement ou créneau continue
-                if ($start <= $current['end']) {
-                    if ($end > $current['end']) {
-                        $current['end'] = $end;
-                    }
-                } else {
-                    // Nouveau bloc horaire
-                    $merged[] = $current;
-                    $current = ['start' => $start, 'end' => $end];
-                }
-            }
-
-            // Ajoute le dernier bloc
-            $merged[] = $current;
-
-            // Stocke pour ce jour
-            $horaires[$jour] = array_map(fn($m) => [
-                'open'  => $m['start']->format('H:i'),
-                'close' => $m['end']->format('H:i')
-            ], $merged);
-        }
-
-        return $horaires;
     }
 }

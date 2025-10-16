@@ -10,9 +10,28 @@ class FermetureManager
 
     public function getAll(): array
     {
-        $stmt = $this->pdo->query("SELECT * FROM fermeture_exceptionnelle ORDER BY date_debut ASC");
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $request = $this->pdo->query("SELECT * FROM fermeture_exceptionnelle ORDER BY date_debut ASC");
+        return $request->fetchAll(PDO::FETCH_ASSOC);
     }
+
+    public function getById(int $id): ?Fermeture
+    {
+        $request = $this->pdo->prepare("SELECT * FROM fermetures WHERE id = :id");
+        $request->execute(['id' => $id]);
+        $data = $request->fetch(PDO::FETCH_ASSOC);
+
+        if ($data) {
+            return new Fermeture(
+                $data['id'],
+                $data['date_debut'],
+                $data['date_fin'],
+                $data['motif']
+            );
+        }
+
+        return null;
+    }
+
 
     /** Liste des fermetures actives (aujourd'hui ou à venir) */
     public function getActive(): array
@@ -21,9 +40,9 @@ class FermetureManager
         $sql = "SELECT * FROM fermeture_exceptionnelle
                 WHERE date_fin >= :today
                 ORDER BY date_debut ASC";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':today' => $today]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $request = $this->pdo->prepare($sql);
+        $request->execute([':today' => $today]);
+        return $request->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /** Création d’une fermeture */
@@ -31,8 +50,8 @@ class FermetureManager
     {
         $sql = "INSERT INTO fermeture_exceptionnelle (date_debut, date_fin, motif)
                 VALUES (:debut, :fin, :motif)";
-        $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([
+        $request = $this->pdo->prepare($sql);
+        return $request->execute([
             ':debut' => $dateDebut,
             ':fin'   => $dateFin,
             ':motif' => $motif
@@ -42,8 +61,8 @@ class FermetureManager
     /** Suppression d’une fermeture */
     public function delete(int $id): bool
     {
-        $stmt = $this->pdo->prepare("DELETE FROM fermeture_exceptionnelle WHERE id = :id");
-        return $stmt->execute([':id' => $id]);
+        $request = $this->pdo->prepare("DELETE FROM fermeture_exceptionnelle WHERE id = :id");
+        return $request->execute([':id' => $id]);
     }
 
     /** Vérifie si une date donnée tombe pendant une fermeture */
@@ -51,9 +70,9 @@ class FermetureManager
     {
         $sql = "SELECT COUNT(*) FROM fermeture_exceptionnelle
                 WHERE :date BETWEEN date_debut AND date_fin";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':date' => $date]);
-        return $stmt->fetchColumn() > 0;
+        $request = $this->pdo->prepare($sql);
+        $request->execute([':date' => $date]);
+        return $request->fetchColumn() > 0;
     }
 
     /**

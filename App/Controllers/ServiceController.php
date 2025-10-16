@@ -1,15 +1,13 @@
 <?php
-class ServiceController
+
+declare(strict_types=1);
+
+class ServiceController extends BaseController
 {
-    private ServiceManager $serviceManager;
-    private AuthController $authController;
-    private DisponibiliteServiceManager $dispoServiceManager;
 
     public function __construct(PDO $pdo)
     {
-        $this->serviceManager = new ServiceManager($pdo);
-        $this->authController = new AuthController($pdo);
-        $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
+        parent::__construct($pdo);
     }
 
     // Liste des services
@@ -60,6 +58,9 @@ class ServiceController
         $imageName = null;
         if (!empty($_FILES['image']['name'])) {
             $uploadDir = __DIR__ . '/../../Public/uploads/services/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
+            }
             $fileTmp = $_FILES['image']['tmp_name'];
             $originalName = basename($_FILES['image']['name']);
             $extension = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
@@ -92,6 +93,9 @@ class ServiceController
 
         if ($this->serviceManager->createService($service)) {
             $_SESSION['success'] = "Service créé avec succès.";
+
+            // AUDIT
+            $this->audit('services', $service->getId(), 'INSERT', "Création du service « {$service->getNom()} »");
         } else {
             $_SESSION['error'] = "Erreur lors de la création du service.";
         }
@@ -125,7 +129,7 @@ class ServiceController
         $nom = trim($_POST['nom'] ?? '');
         $duree = (int)($_POST['duree'] ?? 30);
         $description = trim($_POST['description'] ?? '');
-        $is_active = isset($_POST['is_active']) ? 1 : 0;
+        $is_active = isset($_POST['is_active']);
 
         // on récupère le service à modifier
         $service = $this->serviceManager->getServiceById($id);
@@ -185,6 +189,10 @@ class ServiceController
 
         if ($this->serviceManager->updateService($service)) {
             $_SESSION['success'] = "Service mis à jour avec succès.";
+
+            // AUDIT
+            $this->audit('services', $service->getId(), 'UPDATE', "Modification du service « {$service->getNom()} »");
+
             header("Location: index.php?page=services");
             exit;
         } else {
@@ -206,12 +214,18 @@ class ServiceController
 
             if ($service && $service->getImage()) {
                 $uploadDir = __DIR__ . '/../../Public/uploads/services/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
                 $filePath = $uploadDir . $service->getImage();
                 if (file_exists($filePath)) {
                     unlink($filePath);
                 }
             }
             $_SESSION['success'] = "Service supprimé avec succès.";
+
+            // AUDIT
+            $this->audit('services', $id, 'DELETE', "Suppression du service « {$service->getNom()} »");
         } else {
             $_SESSION['error'] = "Erreur lors de la suppression du service.";
         }
@@ -270,6 +284,17 @@ class ServiceController
         $this->serviceManager->updateService($service);
 
         $_SESSION['success'] = "Le service « {$service->getNom()} » a été " . ($newStatus ? "activé" : "désactivé") . ".";
+
+        // AUDIT
+        $this->audit(
+            'services',
+            $service->getId(),
+            $newStatus ? 'ACTIVATE' : 'DEACTIVATE',
+            ($newStatus
+                ? "Activation du service « {$service->getNom()} »"
+                : "Désactivation du service « {$service->getNom()} »")
+        );
+
         header("Location: index.php?page=services");
         exit;
     }

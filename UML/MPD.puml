@@ -3,13 +3,13 @@
 
 entity "User" as user {
   | Type       | Nom        | PK/FK | Null |
-  | BIGINT     | id         | PK    | NOT NULL |
-  | VARCHAR(100) | name     |       | NOT NULL |
-  | VARCHAR(255) | adress   |       | NOT NULL |
-  | VARCHAR(100) | phone    |       | NULL     |
+  | BIGINT       | id         | PK    | NOT NULL |
+  | VARCHAR(100) | nom     |       | NOT NULL |
+  | VARCHAR(255) | prenom   |       | NOT NULL |
   | VARCHAR(150) | email    |       | NOT NULL |
   | VARCHAR(255) | password |       | NOT NULL |
-  | BOOLEAN    | isActive   |       | NOT NULL |
+  | BOOLEAN      | is_active   |       | NOT NULL |
+  | DATETIME     | created_at   |       | NOT NULL |
 }
 
 entity "Role" as role {
@@ -27,28 +27,29 @@ entity "UserRole" as userrole {
 entity "Service" as service {
   | Type        | Nom        | PK/FK | Null |
   | BIGINT      | id         | PK    | NOT NULL |
-  | VARCHAR(100)| name       |       | NOT NULL |
-  | TEXT        | description|       | NULL |
-  | DECIMAL(10,2)| price     |       | NOT NULL |
-  | BOOLEAN     | isActive   |       | NOT NULL |
+  | VARCHAR(100)| nom       |       | NOT NULL |
+  | TEXT        | description|       | NULL |.
+  | INT(11)     | duree     |       | NOT NULL |
+  | VARCHAR(255)| image     |       | NOT NULL |
+  | BOOLEAN     | is_active   |       | NOT NULL |
 }
 
 entity "DisponibiliteStaff" as dispostaff {
   | Type     | Nom           | PK/FK | Null |
   | BIGINT   | id            | PK    | NOT NULL |
-  | BIGINT   | staff_id      | FK    | NOT NULL |
-  | DATETIME | start_datetime|       | NOT NULL |
-  | DATETIME | end_datetime  |       | NOT NULL |
-  | BOOLEAN  | isAvailable   |       | NOT NULL |
+  | BIGINT   | user_id       | FK    | NOT NULL |
+  | ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') | jour_semaine |       | NOT NULL |
+  | DATETIME | start_time|       | NOT NULL |
+  | DATETIME | end_time  |       | NOT NULL |
 }
 
 entity "DisponibiliteService" as disposervice {
   | Type     | Nom           | PK/FK | Null |
   | BIGINT   | id            | PK    | NOT NULL |
   | BIGINT   | service_id    | FK    | NOT NULL |
-  | DATETIME | start_datetime|       | NOT NULL |
-  | DATETIME | end_datetime  |       | NOT NULL |
-  | BOOLEAN  | isAvailable   |       | NOT NULL |
+  | ENUM('LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE') | jour_semaine |       | NOT NULL |
+  | DATETIME | start_time|       | NOT NULL |
+  | DATETIME | end_time  |       | NOT NULL |
 }
 
 entity "RDV" as rdv {
@@ -57,29 +58,34 @@ entity "RDV" as rdv {
   | BIGINT   | patient_id   | FK    | NOT NULL |
   | BIGINT   | staff_id     | FK    | NOT NULL |
   | BIGINT   | service_id   | FK    | NOT NULL |
-  | DATETIME | start_datetime|      | NOT NULL |
-  | DATETIME | end_datetime |       | NULL |
-  | VARCHAR(20)| ENUM('Programmé','Annulé','Terminé')     |       | NOT NULL |
+  | BIGINT   | dispo_staff_id | FK  | NULL     |
+  | BIGINT   | dispo_service_id | FK | NULL    |
+  | DATETIME | date_rdv     | FK    | NOT NULL |
+  | DATETIME | heure_debut  |       | NOT NULL |
+  | DATETIME | heure_fin    |       | NOT NULL |
+  | ENUM('PROGRAMME','ANNULE','TERMINE')| statut |    | NOT NULL |
 }
 
 entity "News" as news {
   | Type        | Nom     | PK/FK | Null |
   | BIGINT      | id      | PK    | NOT NULL |
   | VARCHAR(150)| title   |       | NOT NULL |
-  | TEXT        | content |       | NOT NULL |
-  | BOOLEAN     | isActive|       | NOT NULL |
+  | TEXT        | contenu |       | NOT NULL |
+  | DATETIME    | created_at|     | NOT NULL |
+  | BIGINT      | created_by|     | NOT NULL |
+  | VARCHAR(255)| image   |       | NULL     |
 }
 
 entity "AuditLog" as auditlog {
   | Type     | Nom        | PK/FK | Null |
   | BIGINT   | id         | PK    | NOT NULL |
-  | VARCHAR(50) | entity  |       | NOT NULL |
+  | VARCHAR(100) | table_name  | FK | NOT NULL |
   | BIGINT   | entity_id  |       | NOT NULL |
-  | BIGINT   | user_id    | FK    | NOT NULL |
-  | VARCHAR(20) | action  |       | NOT NULL |
+  | BIGINT   | user_id    |       | NOT NULL |
+  | ENUM('INSERT','UPDATE','DELETE') | action  |   | NOT NULL |
   | TEXT     | description|       | NULL |
   | VARCHAR(45) | ip_address |    | NULL |
-  | DATETIME | created_at |       | NOT NULL |
+  | DATETIME | action_date |       | NOT NULL |
 }
 
 ' =====================

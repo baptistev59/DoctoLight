@@ -1,15 +1,23 @@
 <?php
-class AuthController
-{
-    private PDO $pdo;
-    private UserManager $userManager;
-    private array $config;
 
-    public function __construct(PDO $pdo)
+declare(strict_types=1);
+
+class AuthController extends BaseController
+{
+
+    public function __construct(PDO $pdo, ?array $config = null)
     {
-        $this->pdo = $pdo;
-        $this->config = require __DIR__ . '/../../Config/config.php';
-        $this->userManager = new UserManager($pdo, $this->config);
+        parent::__construct($pdo);
+
+        // On réutilise la config passée depuis BaseController si dispo
+        if ($config !== null && is_array($config)) {
+            $this->config = $config;
+        } else {
+            // Fallback si AuthController est appelé seul (ex: init.php)
+            $configPath = dirname(__DIR__, 2) . '/Config/config.php';
+            $loaded = (file_exists($configPath)) ? require $configPath : [];
+            $this->config = is_array($loaded) ? $loaded : [];
+        }
     }
 
     // Vérification du Token CSRF
@@ -39,8 +47,13 @@ class AuthController
             } elseif (!$user->isActive()) {
                 $error = "Votre compte est désactivé. Contactez l'administrateur.";
             } else {
+                // Connexion réussie
                 session_regenerate_id(true); // protection fixation de session
                 $_SESSION['user'] = $user;
+
+                // === AUDIT ===
+                $this->audit('users', $user->getId(), 'LOGIN', 'Connexion réussie');
+
                 header("Location: index.php?page=home");
                 exit;
             }
@@ -62,6 +75,12 @@ class AuthController
             session_start();
         }
 
+        // === AUDIT ===
+        $user = $_SESSION['user'] ?? null;
+        $userId = ($user && method_exists($user, 'getId')) ? $user->getId() : null;
+        if ($userId) {
+            $this->audit('users', $userId, 'LOGOUT', 'Déconnexion de l\'utilisateur');
+        }
         // Vider les variables de session
         $_SESSION = [];
 
@@ -169,6 +188,10 @@ class AuthController
             if ($newUser instanceof User) {
                 session_regenerate_id(true);
                 $_SESSION['user'] = $newUser;
+
+                // === AUDIT ===
+                $this->audit('users', $newUser->getId(), 'INSERT', 'Inscription d\'un nouveau patient');
+
                 header('Location: index.php?page=home');
                 exit;
             } else {

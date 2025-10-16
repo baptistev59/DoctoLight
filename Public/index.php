@@ -26,8 +26,8 @@ error_reporting(E_ALL);
 $db = new Database();
 $pdo = $db->getConnection();
 
-// Auth
-$auth = new AuthController($pdo);
+// Instance unique de AuthController
+$auth = new AuthController($pdo, $config);
 
 // Routes
 $routes = [
@@ -124,6 +124,10 @@ $routes = [
     'fermeture_store'   => ['controller' => 'FermetureController', 'method' => 'store', 'role' => ['ADMIN', 'SECRETAIRE']],
     'fermeture_delete'  => ['controller' => 'FermetureController', 'method' => 'delete', 'role' => ['ADMIN', 'SECRETAIRE']],
 
+    // Audit
+    'auditlogs' => ['controller' => 'AuditLogController', 'method' => 'list', 'role' => ['ADMIN']],
+    'auditlogs_clean' => ['controller' => 'AuditLogController', 'method' => 'clean', 'role' => ['ADMIN']],
+
 
 ];
 
@@ -160,7 +164,13 @@ if (isset($route['controller'], $route['method'])) {
     $controllerName = $route['controller'];
     $method = $route['method'];
 
-    $controller = new $controllerName($pdo, $config);
+    // Instanciation du contrôleur
+    $controller = new $controllerName($pdo, $config ?? []);
+
+    // Injection du AuthController dans le contrôleur
+    if (method_exists($controller, 'setAuthController')) {
+        $controller->setAuthController($auth);
+    }
 
     // Méthodes nécessitant ID
     $methodsRequiringId = ['edit', 'delete', 'view', 'toggleActive', 'rdvEdit', 'rdvCancel', 'show', 'update'];

@@ -51,6 +51,12 @@ class Service
 
 
     // Setters
+
+    public function setId(int $id): void
+    {
+        $this->id = $id;
+    }
+
     public function setNom(string $nom): void
     {
         $this->nom = $nom;

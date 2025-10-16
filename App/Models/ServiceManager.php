@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 class ServiceManager
 {
     private PDO $pdo;
@@ -19,6 +22,8 @@ class ServiceManager
         while ($row = $request->fetch(PDO::FETCH_ASSOC)) {
             $services[] = new Service($row);
         }
+
+
         return $services;
     }
 
@@ -39,6 +44,7 @@ class ServiceManager
         $sql = "INSERT INTO services (nom, duree, description, image, is_active)
                 VALUES (:nom, :duree, :description, :image, :is_active)";
         $params = [
+
             ':nom'         => $service->getNom(),
             ':duree'       => $service->getDuree(),
             ':description' => $service->getDescription(),
@@ -46,7 +52,13 @@ class ServiceManager
             ':is_active'   => $service->isActive() ? 1 : 0,
         ];
 
+
         $request = $this->pdo->prepare($sql);
+
+        if ($request->execute($params)) {
+            $service->setId((int)$this->pdo->lastInsertId());
+            return true;
+        }
         return $request->execute($params);
     }
 

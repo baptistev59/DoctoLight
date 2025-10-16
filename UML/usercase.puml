@@ -8,23 +8,29 @@ skinparam usecase {
 }
 
 actor "Patient" as patient
-actor "Staff" as staff
+actor "Secrétaire" as secretaire
+actor "Médecin" as medecin
+actor "Admin" as admin
 
-usecase "Prendre un rendez-vous" as UC1
-usecase "Modifier un rendez-vous" as UC2
-usecase "Annuler un rendez-vous" as UC3
+usecase "Prendre son rendez-vous" as UC1
+usecase "Modifier ses rendez-vous" as UC2
+usecase "Annuler ses rendez-vous" as UC3
 usecase "Consulter ses rendez-vous" as UC4
 usecase "Gérer les rendez-vous" as UC5
 usecase "Consulter RDV par patient" as UC6
 usecase "Consulter RDV par médecin" as UC7
 usecase "Consulter RDV par date" as UC8
-usecase "Gérer disponibilités" as UC9
+usecase "Gérer disponibilités médecins" as UC9
 usecase "Gérer disponibilités services" as UC10
-usecase "Créer / gérer services" as UC11
+usecase "Gérer services" as UC11
 usecase "Gérer les utilisateurs" as UC12
 usecase "Consulter journaux (Audit Log)" as UC13
 usecase "Consulter actualités" as UC14
 usecase "Publier actualités" as UC15
+usecase "Consulter RDV par Service" as UC16
+usecase "Consulter services" as UC17
+usecase "Gérer son profil" as UC18
+usecase "Gérer fermetures" as UC19
 
 ' Associations
 patient --> UC1
@@ -32,16 +38,31 @@ patient --> UC2
 patient --> UC3
 patient --> UC4
 patient --> UC14
+patient --> UC17
+patient --> UC18
 
-staff --> UC5
-staff --> UC6
-staff --> UC7
-staff --> UC8
-staff --> UC9
-staff --> UC10
-staff --> UC11
-staff --> UC12
-staff --> UC13
-staff --> UC15
+medecin --> UC9
+medecin --> UC17
+medecin --> UC14
+medecin --> UC4
+
+secretaire --> UC5
+secretaire --> UC6
+secretaire --> UC7
+secretaire --> UC8
+secretaire --> UC10
+secretaire --> UC16
+secretaire --> UC11
+secretaire --> UC19
+
+admin --> UC10
+admin --> UC12
+admin --> UC7
+admin --> UC16
+admin --> UC11
+admin --> UC12
+admin --> UC13
+admin --> UC15
+admin --> UC18
 
 @enduml

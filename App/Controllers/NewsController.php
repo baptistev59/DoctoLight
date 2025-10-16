@@ -1,16 +1,11 @@
 <?php
-class NewsController
-{
-    private NewsManager $newsManager;
-    private AuthController $authController;
-    private UserManager $userManager;
 
-    // include __DIR__ . '/../
+declare(strict_types=1);
+class NewsController extends BaseController
+{
     public function __construct(PDO $pdo)
     {
-        $this->newsManager = new NewsManager($pdo);
-        $this->authController = new AuthController($pdo);
-        $this->userManager = new UserManager($pdo, []);
+        parent::__construct($pdo);
     }
 
     // Afficher toutes les news
@@ -105,6 +100,9 @@ class NewsController
         ]);
 
         if ($this->newsManager->createNews($news)) {
+            // audit
+            $this->audit('news', (int)$this->pdo->lastInsertId(), 'INSERT', "Création d\'une actualité : $titre");
+
             header("Location: index.php?page=news&success=created");
         } else {
             die("Erreur lors de la création de l'actualité.");
@@ -174,6 +172,9 @@ class NewsController
         $news->setImage($imageName);
 
         if ($this->newsManager->updateNews($news)) {
+            // aduti
+            $this->audit('news', $id, 'UPDATE', "Modification d\'une actualité : $titre");
+
             header("Location: index.php?page=news&success=updated");
         } else {
             die("Erreur lors de la mise à jour de l'actualité.");
@@ -188,6 +189,8 @@ class NewsController
 
         $id = intval($_POST['id'] ?? $_GET['id'] ?? 0);
         if ($id && $this->newsManager->deleteNews($id)) {
+            // Audit
+            $this->audit('news', $id, 'DELETE', "Suppression de l\'actualité #$id");
             header("Location: index.php?page=news&success=deleted");
         } else {
             die("Erreur lors de la suppression de l'actualité.");

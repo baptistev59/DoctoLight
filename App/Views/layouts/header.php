@@ -107,6 +107,7 @@
                                     'Comptes des utilisateurs' => BASE_URL . 'index.php?page=users',
                                     'Services du cabinet' => BASE_URL . 'index.php?page=services',
                                     'Fermetures du cabinet' => BASE_URL . 'index.php?page=fermetures',
+                                    'Journal des actions' => BASE_URL .  'index.php?page=auditlogs',
                                 ],
                             ],
                             'SECRETAIRE' => [

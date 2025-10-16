@@ -24,6 +24,8 @@
     <?php endif; ?>
 
     <form method="post" action="index.php?page=rdv_store" id="rdvForm" class="card p-4 shadow-sm no-hover">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
         <?php
         $isPatient   = $isPatient ?? false;
         $currentUser = $currentUser ?? null;

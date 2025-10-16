@@ -4,6 +4,9 @@
 
 <form method="post" action="index.php?page=rdv_store" id="rdvForm">
 
+    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
+
+
     <!-- Champ caché pour savoir qu'on est en mode édition -->
     <input type="hidden" name="edit_id" value="<?= $rdv->getId() ?>">
 

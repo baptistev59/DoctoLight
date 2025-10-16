@@ -1,17 +1,13 @@
 <?php
-class HomeController
+
+declare(strict_types=1);
+
+class HomeController extends BaseController
 {
-    private ServiceManager $serviceManager;
-    private DisponibiliteServiceManager $dispoServiceManager;
-    private NewsManager $newsManager;
-    private FermetureManager $fermetureManager;
 
     public function __construct(PDO $pdo)
     {
-        $this->serviceManager = new ServiceManager($pdo);
-        $this->dispoServiceManager = new DisponibiliteServiceManager($pdo);
-        $this->newsManager = new NewsManager($pdo);
-        $this->fermetureManager = new FermetureManager($pdo);
+        parent::__construct($pdo);
     }
 
     public function index(): void
@@ -22,7 +18,7 @@ class HomeController
         $latestNews = $this->newsManager->getLatest(3);
         $fermeturesActives = $this->fermetureManager->getActive();
 
-
+        // $this->audit('test', 1, 'INSERT', 'Test depuis HomeController');
         include __DIR__ . '/../Views/home.php';
     }
 
