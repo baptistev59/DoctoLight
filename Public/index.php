@@ -133,6 +133,7 @@ $routes = [
 
 // Page demandée
 $page = $_GET['page'] ?? 'home';
+
 if (!isset($routes[$page])) {
     view('404');
     exit;
@@ -165,7 +166,7 @@ if (isset($route['controller'], $route['method'])) {
     $method = $route['method'];
 
     // Instanciation du contrôleur
-    $controller = new $controllerName($pdo, $config ?? []);
+    $controller = new $controllerName($pdo);
 
     // Injection du AuthController dans le contrôleur
     if (method_exists($controller, 'setAuthController')) {

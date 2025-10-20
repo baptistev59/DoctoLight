@@ -5,7 +5,7 @@ declare(strict_types=1);
 class RDVController extends BaseController
 {
 
-    public function __construct(PDO $pdo, array $config)
+    public function __construct(PDO $pdo, array $config = [])
     {
         parent::__construct($pdo);
     }
