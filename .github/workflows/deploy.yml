@@ -19,13 +19,18 @@ jobs:
           ping -c 3 ssh-baptistev59.alwaysdata.net || true
           nslookup ssh-baptistev59.alwaysdata.net || true
 
-      - name: Deploy to alwaysData via SSH
-        uses: burnett01/rsync-deployments@5.2
-        with:
-          switches: -avzr --delete
-          path: ./
-          remote_path: /home/baptistev59/www/doctolight/
-          remote_host: 185.31.41.85
-          remote_port: 22
-          remote_user: ${{ secrets.ALWAYSDATA_USER }}
-          remote_key: ${{ secrets.ALWAYSDATA_SSH_KEY }}
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ALWAYSDATA_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 185.31.41.85 >> ~/.ssh/known_hosts
+
+      - name: Deploy to alwaysData via rsync
+        run: |
+          rsync -avzr --delete \
+          --exclude '.git/' \
+          --exclude '.github/' \
+          --exclude 'tests/' \
+          --exclude 'README.md' \
+          ./ ${{ secrets.ALWAYSDATA_USER }}@185.31.41.85:/home/baptistev59/www/doctolight/
