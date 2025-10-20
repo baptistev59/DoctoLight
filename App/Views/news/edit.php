@@ -18,7 +18,7 @@
 
         <!-- Aperçu de l’image actuelle -->
         <?php if ($news->getImage()): ?>
-            <div class="text-center mb-4">
+            <div class="news-image mb-4">
                 <img src="<?= BASE_URL ?>uploads/news/<?= htmlspecialchars($news->getImage()); ?>"
                     alt="Illustration de l'actualité"
                     class="rounded shadow-sm news-image">
