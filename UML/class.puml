@@ -26,7 +26,7 @@ class User {
 
 class Role {
   -id : int
-  -name : RoleName
+  -name : string
 
   +createRole()
   +updateRole()
@@ -136,7 +136,7 @@ class AuditLog {
 User "1" --> "0..n" RDV : crée/prend
 User "1" --> "0..n" RDV : consulte/valide (staff)
 User "1" --> "0..n" DisponibiliteStaff : définit/ajoute
-User "1" --> "1..n" UserRole : s’attribue/revoque rôle
+User "1" --> "1..n" Role : s’attribue/revoque rôle
 User "1" --> "0..n" News : publie/gère
 User "1" --> "0..n" AuditLog : historise
 
@@ -146,11 +146,7 @@ Service "1" --> "0..n" AuditLog : historise
 
 News "1" --> "0..n" AuditLog : historise
 
-Role "1" --> "0..n" UserRole :attribue
-Role -> RoleName
-
 RDV "1" --> "0..n" AuditLog : historise
-RDV -> StatutRdv
 
 DisponibiliteStaff "1" --> "0..n" AuditLog : historise
 DisponibiliteService "1" --> "0..n" AuditLog :historise

@@ -15,12 +15,12 @@ Le projet suit une **architecture MVC** maison, sans framework ni dépendance Co
 
 ## 👥 Comptes de test
 
-| Rôle | Email | Mot de passe |
-|------|--------|---------------|
-| **Admin** | admin@doctolight.com | admin123 |
-| **Secrétaire** | secretaire@doctolight.com | secret123 |
-| **Médecin** | medecin@doctolight.com | doctor123 |
-| **Patient** | patient@doctolight.com | patient123 |
+| Role          | Email              | Password |
+| ------------- | ------------------ | -------- |
+| **Admin**     | admin1@test.fr     | 123      |
+| **Secretary** | secretaire@test.fr | 123      |
+| **Doctor**    | medecin1@test.fr   | 123      |
+| **Patient**   | patient1@test.fr   | 123      |
 
 ---
 
@@ -60,17 +60,20 @@ UML/
 ## ⚙️ Installation
 
 1. **Cloner le dépôt**
+
    ```bash
    git clone https://github.com/baptistev59/DoctoLight.git
    ```
 
 2. **Importer la base de données**
+
    - Créer une base MySQL/MariaDB
    - Importer `SQL/schema.sql`
    - Optionnel : importer les données de test via `SQL/seed.sql`
 
 3. **Configurer la connexion**
    Modifier le fichier `/Config/config.php` :
+
    ```php
    define('DB_HOST', 'localhost');
    define('DB_NAME', 'doctolight');
@@ -87,45 +90,52 @@ UML/
 ## 🧩 Fonctionnalités principales
 
 ### 👨‍⚕️ Gestion des rôles
+
 4 rôles : **Admin**, **Secrétaire**, **Médecin**, **Patient**  
 Chaque rôle possède ses propres droits et menus dédiés.
 
 ### 📅 Gestion des rendez-vous
-- Création / modification / suppression  
-- Affichage des plannings par service ou praticien  
+
+- Création / modification / suppression
+- Affichage des plannings par service ou praticien
 - Intégration des jours de fermeture
 
 ### 🧑‍💼 Gestion des services et de l’équipe
-- CRUD complet pour les services  
-- Disponibilités des services et du personnel  
+
+- CRUD complet pour les services
+- Disponibilités des services et du personnel
 - Gestion des horaires du cabinet
 
 ### 📰 Gestion des actualités
+
 Interface d’administration pour publier et modifier les actualités du cabinet avec images.
 
 ### 🔒 Sécurité
-- Authentification par sessions PHP  
-- Vérification CSRF sur les formulaires sensibles  
-- Re-génération de session  
+
+- Authentification par sessions PHP
+- Vérification CSRF sur les formulaires sensibles
+- Re-génération de session
 - Requêtes PDO préparées (prévention injections SQL)
 
 ### 🧾 Journalisation (Audit Log)
+
 Toutes les actions (ajout, modification, suppression) sont enregistrées dans la table `audit_log` avec :
-- Identifiant utilisateur  
-- Type d’action  
-- IP de l’utilisateur  
+
+- Identifiant utilisateur
+- Type d’action
+- IP de l’utilisateur
 - Date et heure
 
 ---
 
 ## 🧠 Points techniques
 
-- **Langage :** PHP 8.2  
-- **Base de données :** MySQL / MariaDB  
-- **Frontend :** Bootstrap 5 + SCSS compilé via `build-sass.bat`  
-- **Sécurité :** CSRF, sessions, PDO préparé  
-- **Architecture :** MVC sans framework  
-- **Tests :** PHPUnit (structure en place)  
+- **Langage :** PHP 8.2
+- **Base de données :** MySQL / MariaDB
+- **Frontend :** Bootstrap 5 + SCSS compilé via `build-sass.bat`
+- **Sécurité :** CSRF, sessions, PDO préparé
+- **Architecture :** MVC sans framework
+- **Tests :** PHPUnit (structure en place)
 - **UML :** Diagrammes de classes, cas d’utilisation et MPD inclus
 
 ---

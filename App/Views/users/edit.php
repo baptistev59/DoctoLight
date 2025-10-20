@@ -28,7 +28,7 @@
     $isSelfEdit = $currentUser && $currentUser->getId() === $userToEdit->getId();
     ?>
 
-    <form method="POST" action="" class="card p-4 shadow-sm">
+    <form id="editUserForm" method="POST" action="" class="card p-4 shadow-sm">
         <!-- CSRF token -->
         <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token']) ?>">
 
@@ -66,10 +66,18 @@
             <div class="col-md-6">
                 <label for="password" class="form-label">Nouveau mot de passe (laisser vide si inchangé) :</label>
                 <input type="password" class="form-control" name="password" id="password">
+                <div id="passwordHelp" class="form-text text-muted">
+                    Au moins 8 caractères, une majuscule, un chiffre et un caractère spécial.
+                </div>
+                <div class="progress mt-2" style="height: 8px;">
+                    <div id="passwordStrengthBar" class="progress-bar bg-danger" style="width: 0%;"></div>
+                </div>
+                <small id="passwordStrengthText" class="form-text text-muted"></small>
             </div>
             <div class="col-md-6">
                 <label for="password_confirm" class="form-label">Confirmer le mot de passe :</label>
                 <input type="password" class="form-control" name="password_confirm" id="password_confirm">
+                <div id="matchMessage" class="form-text"></div>
             </div>
         </div>
 
@@ -113,5 +121,99 @@
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('editUserForm');
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('password_confirm');
+        const matchMessage = document.getElementById('matchMessage');
+        const strengthBar = document.getElementById('passwordStrengthBar');
+        const strengthText = document.getElementById('passwordStrengthText');
+
+        function evaluateStrength(pass) {
+            let score = 0;
+            if (pass.length >= 8) score++;
+            if (/[A-Z]/.test(pass)) score++;
+            if (/[a-z]/.test(pass)) score++;
+            if (/\d/.test(pass)) score++;
+            if (/[@$!%*?&]/.test(pass)) score++;
+            return score;
+        }
+
+        function updateStrengthMeter() {
+            const pass = password.value;
+            const score = evaluateStrength(pass);
+            let width = (score / 5) * 100;
+            let color = 'bg-danger';
+            let text = 'Très faible';
+
+            if (score >= 4) {
+                color = 'bg-success';
+                text = 'Fort';
+            } else if (score === 3) {
+                color = 'bg-warning';
+                text = 'Moyen';
+            } else if (score === 2) {
+                color = 'bg-orange';
+                text = 'Faible';
+            }
+
+            strengthBar.className = 'progress-bar ' + color;
+            strengthBar.style.width = width + '%';
+            strengthText.textContent = pass ? 'Force : ' + text : '';
+        }
+
+        function checkPasswords() {
+            if (password.value === '' && confirmPassword.value === '') {
+                matchMessage.textContent = '';
+                confirmPassword.classList.remove('is-invalid', 'is-valid');
+                return;
+            }
+
+            if (password.value !== confirmPassword.value) {
+                matchMessage.textContent = 'Les mots de passe ne correspondent pas.';
+                matchMessage.classList.add('text-danger');
+                matchMessage.classList.remove('text-success');
+                confirmPassword.classList.add('is-invalid');
+                confirmPassword.classList.remove('is-valid');
+            } else {
+                matchMessage.textContent = 'Les mots de passe correspondent.';
+                matchMessage.classList.add('text-success');
+                matchMessage.classList.remove('text-danger');
+                confirmPassword.classList.add('is-valid');
+                confirmPassword.classList.remove('is-invalid');
+            }
+        }
+
+        function validatePasswordStrength(pass) {
+            const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+            return regex.test(pass);
+        }
+
+        password.addEventListener('keyup', () => {
+            updateStrengthMeter();
+            checkPasswords();
+        });
+        confirmPassword.addEventListener('keyup', checkPasswords);
+
+        form.addEventListener('submit', function(e) {
+            // Si aucun mot de passe n’est saisi, on laisse passer
+            if (password.value === '' && confirmPassword.value === '') {
+                return;
+            }
+
+            if (!validatePasswordStrength(password.value)) {
+                e.preventDefault();
+                alert("Le mot de passe n'est pas assez sécurisé !");
+                password.focus();
+            } else if (password.value !== confirmPassword.value) {
+                e.preventDefault();
+                alert("Les mots de passe ne correspondent pas !");
+                confirmPassword.focus();
+            }
+        });
+    });
+</script>
 
 <?php include __DIR__ . '/../layouts/footer.php'; ?>
