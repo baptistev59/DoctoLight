@@ -4,15 +4,22 @@ D:.
 ¦   .gitignore
 ¦   arborescence_Doctorlight.txt
 ¦   build-sass.bat
+¦   composer.json
+¦   composer.lock
 ¦   generer_arborescence.bat
+¦   phpunit-10.5.58.phar
 ¦   
 +---.github
 ¦   +---workflows
 ¦           deploy.yml
 ¦           
 +---App
+¦   ¦   Autoload.php
+¦   ¦   
 ¦   +---Controllers
+¦   ¦       AuditLogController.php
 ¦   ¦       AuthController.php
+¦   ¦       BaseController.php
 ¦   ¦       DisponibiliteServiceController.php
 ¦   ¦       DisponibiliteStaffController.php
 ¦   ¦       FermetureController.php
@@ -22,11 +29,17 @@ D:.
 ¦   ¦       ServiceController.php
 ¦   ¦       UserController.php
 ¦   ¦       
+¦   +---Enums
+¦   ¦       RoleName.php
+¦   ¦       
 ¦   +---Models
+¦   ¦       AuditLog.php
+¦   ¦       AuditLogManager.php
 ¦   ¦       DisponibiliteService.php
 ¦   ¦       DisponibiliteServiceManager.php
 ¦   ¦       DisponibiliteStaff.php
 ¦   ¦       DisponibiliteStaffManager.php
+¦   ¦       Fermeture.php
 ¦   ¦       FermetureManager.php
 ¦   ¦       News.php
 ¦   ¦       NewsManager.php
@@ -45,6 +58,9 @@ D:.
 ¦       ¦   home.php
 ¦       ¦   test.php
 ¦       ¦   
+¦       +---auditlogs
+¦       ¦       list.php
+¦       ¦       
 ¦       +---disponibilites
 ¦       ¦       _modal_dispo.php
 ¦       ¦       _service_list.php
@@ -112,8 +128,6 @@ D:.
 ¦   ¦       secretaire-marie.jpg
 ¦   ¦       
 ¦   +---scss
-¦   ¦       main.css
-¦   ¦       main.css.map
 ¦   ¦       main.scss
 ¦   ¦       _breakpoints.scss
 ¦   ¦       _buttons.scss
@@ -158,8 +172,20 @@ D:.
 ¦       seed.php
 ¦       seed.sql
 ¦       
++---tests
+¦   ¦   .phpunit.result.cache
+¦   ¦   phpunit.xml
+¦   ¦   
+¦   +---unit
+¦           ServiceControllerTest.php
+¦           SmokeTest.php
+¦           UserManagerTest.php
+¦           
 +---UML
-        class.puml
-        MPD.puml
-        usercase.puml
-        
+¦       class.puml
+¦       MPD.puml
+¦       usercase.puml
+¦       
++---vendor
+    +---sebastian
+    +---staabm

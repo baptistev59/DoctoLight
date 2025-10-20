@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    bootstrap="../App/autoload.php"
+    colors="true"
+    verbose="true"
+    stopOnFailure="false"
+>
+    <testsuites>
+        <testsuite name="DoctoLight Unit Tests">
+            <directory suffix="Test.php">./unit</directory>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="DB_DSN" value="mysql:host=127.0.0.1;dbname=doctolight_test;charset=utf8mb4"/>
+        <env name="DB_USER" value="root"/>
+        <env name="DB_PASS" value=""/>
+    </php>
+</phpunit>

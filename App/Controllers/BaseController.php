@@ -18,9 +18,12 @@ class BaseController
 
 
 
-    public function __construct(PDO $pdo)
-    {
-        // Stocker d’abord le PDO
+    public function __construct(
+        PDO $pdo,
+        ?ServiceManager $serviceManager = null,
+        ?AuthController $authController = null
+    ) {
+        // Stocker le PDO
         $this->pdo = $pdo;
 
         // Charger la configuration de manière sûre
@@ -44,7 +47,7 @@ class BaseController
 
         // Créer un AuthController sauf si on est déjà dans AuthController
         if (!$this instanceof AuthController) {
-            $this->authController = new AuthController($pdo, $this->config);
+            $this->authController = $authController ?? new AuthController($pdo, $this->config);
         }
     }
 

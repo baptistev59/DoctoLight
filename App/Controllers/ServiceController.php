@@ -5,9 +5,12 @@ declare(strict_types=1);
 class ServiceController extends BaseController
 {
 
-    public function __construct(PDO $pdo)
-    {
-        parent::__construct($pdo);
+    public function __construct(
+        PDO $pdo,
+        ?ServiceManager $serviceManager = null,
+        ?AuthController $authController = null
+    ) {
+        parent::__construct($pdo, $serviceManager, $authController);
     }
 
     // Liste des services
